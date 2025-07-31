@@ -1,0 +1,22 @@
+[project]
+name = "organic-coop-app"
+requires-python = ">=3.12"
+version = "0.1.0"
+dependencies = [
+    "fastapi>=0.115.12",
+    "pandas==2.3.0",
+    "filelock>=3.13.1",
+    "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
+    "pydantic-settings>=2.9.1",
+    "requests>=2.32.0",
+    "syft-core>=0.2.3",
+    "uvicorn>=0.34.2",
+    "syft-rds",
+]
+
+[tool.uv.sources]
+syft-rds = { git = "https://github.com/OpenMined/rds.git", branch = "organic-coop" }
+
+[tool.uv]
+dev-dependencies = []
