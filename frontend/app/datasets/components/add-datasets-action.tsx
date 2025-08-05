@@ -9,7 +9,7 @@ import { LaptopIcon, PlusIcon } from "lucide-react"
 import { useState } from "react"
 import { FaShopify } from "react-icons/fa6"
 import { ImportShopifyDatasetModal } from "./import-shopify-dataset-modal"
-import { CreateDatasetModal } from "./create-dataset-modal-wrapper"
+import { CreateDatasetModal } from "./create-dataset-modal"
 
 export function AddDatasetAction() {
   const [isShopifyModalOpen, setIsShopifyModalOpen] = useState(false)
