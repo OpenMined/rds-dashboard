@@ -10,7 +10,7 @@ import { Header } from "./components/header"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Organic Coop Dashboard",
+  title: "RDS Dashboard",
   description: "Dashboard for managing datasets and jobs",
 }
 
