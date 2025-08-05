@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings."""
 
     app_version: str = "0.1.0"
-    app_name: str = "organic-coop"
+    app_name: str = "rds-dashboard"
     debug: bool = True
 
     # Client settings

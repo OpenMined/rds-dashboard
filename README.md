@@ -1,4 +1,4 @@
-# organic-coop
+# RDS Dashboard
 
 ## Development
 
