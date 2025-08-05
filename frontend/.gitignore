@@ -7,7 +7,6 @@ node_modules/
 
 # production
 build/
-out/
 
 # debug
 npm-debug.log*

@@ -23,7 +23,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useToast } from "@/hooks/use-toast"
 import { apiService } from "@/lib/api/api"
 import type { Dataset } from "@/lib/api/types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -36,6 +35,7 @@ import {
 import { useState } from "react"
 import { UpdateDatasetModal } from "./update-dataset-modal"
 import { datasetsApi } from "@/lib/api/datasets"
+import { toast } from "sonner"
 
 interface DatasetActionsSheetProps {
   dataset: Dataset | null
@@ -48,7 +48,6 @@ export function DatasetActionsSheet({
   open,
   onOpenChange,
 }: DatasetActionsSheetProps) {
-  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -64,8 +63,7 @@ export function DatasetActionsSheet({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["datasets"] })
       onOpenChange(false)
-      toast({
-        title: "Success",
+      toast.success("Success", {
         description: "Removed dataset",
       })
     },
@@ -91,10 +89,7 @@ export function DatasetActionsSheet({
       downloadLink.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(downloadLink)
-      toast({
-        title: "Success",
-        description: "Dataset downloaded successfully",
-      })
+      toast.success("Dataset downloaded successfully")
       onOpenChange(false)
     } catch (err) {
       setErrorMessage(

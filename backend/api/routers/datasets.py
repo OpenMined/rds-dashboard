@@ -43,9 +43,6 @@ async def get_datasets(
 )
 async def dataset_create_from_file(
     dataset: UploadFile = File(..., description="The dataset file to upload"),
-    mock_dataset: Optional[UploadFile] = File(
-        None, description="The mock dataset file to upload (optional)"
-    ),
     name: str = Form(
         ..., min_length=1, max_length=100, description="The name of the dataset"
     ),
@@ -58,7 +55,7 @@ async def dataset_create_from_file(
 ) -> DatasetModel:
     """Create a new dataset from an uploaded file."""
     service = DatasetService(syftbox_client)
-    return await service.create_dataset(dataset, mock_dataset, name, description)
+    return await service.create_dataset(dataset, name, description)
 
 
 class ImportShopifyRequestBody(BaseModel):
@@ -107,7 +104,8 @@ async def dataset_sync_shopify(
 ):
     """Sync an existing dataset with its Shopify source."""
     shopify_service = ShopifyService(syftbox_client)
-    return await shopify_service.sync_dataset(dataset_uid)
+    dataset = await shopify_service.sync_dataset(dataset_uid)
+    return {"dataset": dataset}
 
 
 class UpdateDatasetRequestBody(BaseModel):

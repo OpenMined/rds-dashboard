@@ -1,11 +1,6 @@
 "use client"
 
-import type React from "react"
-import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { zodResolver } from "@hookform/resolvers/zod"
 import {
   Dialog,
   DialogContent,
@@ -13,10 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Loader2, FileDownIcon } from "lucide-react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
-import { AddShopifyDatasetFormSchema, datasetsApi } from "@/lib/api/datasets"
 import {
   Form,
   FormControl,
@@ -25,8 +16,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { ApiError, FormFieldError } from "@/lib/api/errors"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { AddShopifyDatasetFormSchema, datasetsApi } from "@/lib/api/datasets"
+import { ApiError, FormFieldError } from "@/lib/api/errors"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { FileDownIcon, Loader2 } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { toast } from "sonner"
+import { z } from "zod"
 
 interface ImportShopifyDatasetModalProps {
   open: boolean
@@ -38,7 +37,6 @@ export function ImportShopifyDatasetModal({
   open,
   onOpenChange,
 }: ImportShopifyDatasetModalProps) {
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   const form = useForm<z.infer<typeof AddShopifyDatasetFormSchema>>({
@@ -61,8 +59,7 @@ export function ImportShopifyDatasetModal({
         setError(error.loc, { message: error.message })
       }
       if (error instanceof ApiError) {
-        toast({
-          title: "Error",
+        toast("Error", {
           description: error.message,
         })
       }
@@ -70,10 +67,7 @@ export function ImportShopifyDatasetModal({
     onSuccess: () => {
       onOpenChange(false)
       form.reset()
-      toast({
-        title: "Success",
-        description: "Added a new dataset from Shopify",
-      })
+      toast("Imported data from Shopify")
       return queryClient.invalidateQueries({ queryKey: ["datasets"] })
     },
   })
