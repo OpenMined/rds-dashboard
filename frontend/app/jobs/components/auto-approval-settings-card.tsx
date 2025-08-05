@@ -143,7 +143,7 @@ export function AutoApprovalSettingsCard() {
               )}
             />
 
-            <Button disabled={isPending} className="size-10 shrink-0">
+            <Button disabled={isPending} size="icon" className="shrink-0">
               {addEmailMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
