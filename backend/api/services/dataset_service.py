@@ -57,7 +57,11 @@ class DatasetService:
         return ListDatasetsResponse(datasets=datasets)
 
     async def create_dataset(
-        self, dataset_file: UploadFile, name: str, description: str, mock_dataset_file: Optional[UploadFile] = None
+        self,
+        dataset_file: UploadFile,
+        name: str,
+        description: str,
+        mock_dataset_file: Optional[UploadFile] = None,
     ) -> DatasetModel:
         """Create a new dataset from uploaded file."""
         try:
@@ -81,7 +85,7 @@ class DatasetService:
                 # Create mock dataset
                 mock_path = Path(temp_dir) / "mock"
                 mock_path.mkdir(parents=True, exist_ok=True)
-                
+
                 if mock_dataset_file:
                     # Use uploaded mock dataset file
                     mock_dataset_path = mock_path / mock_dataset_file.filename

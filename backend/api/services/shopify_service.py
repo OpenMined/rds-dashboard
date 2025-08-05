@@ -79,7 +79,7 @@ class ShopifyService:
 
             return DatasetModel.model_validate(dataset)
 
-    async def sync_dataset(self, dataset_uid: str) -> dict:
+    async def sync_dataset(self, dataset_uid: str) -> DatasetModel:
         """Sync a Shopify datset with the most recent store data."""
         try:
             source = find_source(dataset_uid)
@@ -103,11 +103,11 @@ class ShopifyService:
 
                 # Update the dataset
 
-                self.rds_client.dataset.update(
+                dataset = self.rds_client.dataset.update(
                     DatasetUpdate(uid=dataset_uid, path=str(real_path)),
                 )
 
-                return {"message": f"Dataset {dataset_uid} synced successfully"}
+                return dataset
 
         except HTTPException:
             raise

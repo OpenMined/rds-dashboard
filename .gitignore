@@ -177,3 +177,5 @@ cython_debug/
 
 # local directory
 local/
+
+.DS_Store
