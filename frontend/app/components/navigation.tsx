@@ -6,6 +6,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu"
+import { IconWrapper } from "@/components/ui/icon-wrapper"
 import { BriefcaseIcon, DatabaseIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -22,7 +23,7 @@ export function Navigation() {
             asChild
           >
             <Link href="/datasets">
-              <DatabaseIcon /> Datasets
+              <IconWrapper icon={DatabaseIcon} /> Datasets
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
@@ -32,7 +33,7 @@ export function Navigation() {
           asChild
         >
           <Link href="/jobs">
-            <BriefcaseIcon /> Jobs
+            <IconWrapper icon={BriefcaseIcon} /> Jobs
           </Link>
         </NavigationMenuLink>
       </NavigationMenuList>

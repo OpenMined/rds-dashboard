@@ -58,7 +58,12 @@ async def dataset_create_from_file(
 ) -> DatasetModel:
     """Create a new dataset from an uploaded file."""
     service = DatasetService(syftbox_client)
-    return await service.create_dataset(dataset, mock_dataset, name, description)
+    return await service.create_dataset(
+        dataset_file=dataset, 
+        mock_dataset_file=mock_dataset, 
+        name=name, 
+        description=description
+    )
 
 
 class ImportShopifyRequestBody(BaseModel):

@@ -5,6 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { IconWrapper } from "@/components/ui/icon-wrapper"
 import { LaptopIcon, PlusIcon } from "lucide-react"
 import { useState } from "react"
 import { FaShopify } from "react-icons/fa6"
@@ -20,7 +21,7 @@ export function AddDatasetAction() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="sm">
-            <PlusIcon />
+            <IconWrapper icon={PlusIcon} />
             Add a Dataset
           </Button>
         </DropdownMenuTrigger>
@@ -29,7 +30,7 @@ export function AddDatasetAction() {
             className="cursor-pointer px-3"
             onSelect={() => setIsLocalModalOpen(true)}
           >
-            <LaptopIcon className="size-4" />
+            <IconWrapper icon={LaptopIcon} className="size-4" />
             Add from a local file
           </DropdownMenuItem>
           <DropdownMenuItem

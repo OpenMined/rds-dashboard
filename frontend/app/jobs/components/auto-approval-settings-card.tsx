@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { trustedDatasitesApi } from "@/lib/api/trusted-datasites"
 import { cn } from "@/lib/utils"
+import { IconWrapper } from "@/components/ui/icon-wrapper"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2, Plus, Settings, X } from "lucide-react"
@@ -103,7 +104,7 @@ export function AutoApprovalSettingsCard() {
         )}
       >
         <CardTitle className="flex items-center">
-          <Settings className="mr-2 h-5 w-5" />
+          <IconWrapper icon={Settings} className="mr-2 h-5 w-5" />
           Auto-approval Settings
         </CardTitle>
         <CardDescription>
@@ -145,9 +146,9 @@ export function AutoApprovalSettingsCard() {
 
             <Button disabled={isPending} size="icon" className="shrink-0">
               {addEmailMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <IconWrapper icon={Loader2} className="h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="size-5" />
+                <IconWrapper icon={Plus} className="size-5" />
               )}
             </Button>
           </form>
@@ -170,7 +171,7 @@ export function AutoApprovalSettingsCard() {
                 className="hover:text-destructive ml-1"
                 disabled={isPending}
               >
-                <X className="h-3 w-3" />
+                <IconWrapper icon={X} className="h-3 w-3" />
               </button>
             </Badge>
           ))}
