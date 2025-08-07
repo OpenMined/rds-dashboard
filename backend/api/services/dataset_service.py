@@ -1,20 +1,19 @@
-# backend/api/services/dataset_service.py
-from pathlib import Path
 import tempfile
-from typing import Iterator, Literal, Optional
 import webbrowser
+from pathlib import Path
+from typing import Iterator, Literal, Optional
 
+import requests
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
-import requests
 from syft_core import Client as SyftBoxClient
 from syft_core.url import SyftBoxURL
 from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
-from syft_rds.client.exceptions import DatasetNotFoundError
+from syft_rds.client.exceptions import ItemNotFoundError
 
-from ...models import ListDatasetsResponse, Dataset as DatasetModel
+from ...models import Dataset as DatasetModel
+from ...models import ListDatasetsResponse
 from ...sources import find_source
 from ...utils import get_auto_approve_list
 
@@ -35,23 +34,16 @@ class DatasetService:
 
         # Process datasets to fix temporary issues with RDS
         for dataset in datasets:
-            private_file_path = next(dataset.private_path.iterdir(), None)
+            private_file_path = next(dataset.private_dir.iterdir(), None)
             dataset.private = SyftBoxURL.from_path(
                 private_file_path, self.syftbox_client.workspace
             )
 
-            mock_file_path = next(dataset.mock_path.iterdir(), None)
+            mock_file_path = next(dataset.mock_dir.iterdir(), None)
             dataset.mock = SyftBoxURL.from_path(
                 mock_file_path, self.syftbox_client.workspace
             )
 
-            dataset.readme = None
-            dataset.private_size = (
-                private_file_path.stat().st_size if private_file_path else "1 B"
-            )
-            dataset.mock_size = (
-                mock_file_path.stat().st_size if mock_file_path else "1 B"
-            )
             dataset.source = find_source(dataset.uid)
 
         return ListDatasetsResponse(datasets=datasets)
@@ -73,41 +65,40 @@ class DatasetService:
                 )
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Save real dataset
-                real_path = Path(temp_dir) / "real"
-                real_path.mkdir(parents=True, exist_ok=True)
-                real_dataset_path = real_path / dataset_file.filename
-                real_dataset_path.write_bytes(await dataset_file.read())
+                # Save the private dataset to a temporary directory
+                private_path = Path(temp_dir) / "real"
+                private_path.mkdir(parents=True, exist_ok=True)
+                private_dataset_path = private_path / dataset_file.filename
+                private_dataset_path.write_bytes(await dataset_file.read())
                 logger.debug(
-                    f"Uploaded dataset temporarily saved to: {real_dataset_path}"
+                    f"Uploaded dataset temporarily saved to: {private_dataset_path}"
                 )
 
-                # Create mock dataset
+                # Save the mock dataset to a temporary directory
                 mock_path = Path(temp_dir) / "mock"
                 mock_path.mkdir(parents=True, exist_ok=True)
 
                 if mock_dataset_file:
-                    # Use uploaded mock dataset file
                     mock_dataset_path = mock_path / mock_dataset_file.filename
                     mock_dataset_path.write_bytes(await mock_dataset_file.read())
                     logger.debug(f"Uploaded mock dataset saved to: {mock_dataset_path}")
                 else:
-                    # Fall back to downloading mock data (temporary solution)
+                    # Fall back to downloading a mock dataset
+                    # NOTE: this is a temporary solution until we can automatically generate it
                     mock_dataset_path = mock_path / dataset_file.filename
                     await self._download_mock_dataset(mock_dataset_path)
 
-                # Create dummy description file (temporary fix for RDS bug)
-                dummy_description_path = Path(temp_dir) / "dummy_description.txt"
-                dummy_description_path.touch()
+                # Create a dummy readme file
+                dummy_readme_path = Path(temp_dir) / "dummy_readme.md"
+                dummy_readme_path.touch()
 
-                # Create dataset in RDS
                 dataset = self.rds_client.dataset.create(
                     name=name,
                     summary=description,
-                    path=real_path,
+                    private_path=private_path,
                     mock_path=mock_path,
-                    description_path=dummy_description_path,
-                    auto_approval=get_auto_approve_list(self.syftbox_client),
+                    readme_path=dummy_readme_path,
+                    # auto_approval=get_auto_approve_list(self.syftbox_client),
                 )
 
                 logger.debug(f"Dataset created: {dataset}")
@@ -119,8 +110,8 @@ class DatasetService:
             logger.error(f"Error creating dataset: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def update_dataset(self, dataset_update: DatasetUpdate) -> DatasetModel:
-        return self.rds_client.dataset.update(dataset_update)
+    # async def update_dataset(self, dataset_update: DatasetUpdate) -> DatasetModel:
+    #     return self.rds_client.dataset.update(dataset_update)
 
     async def delete_dataset(self, dataset_name: str) -> JSONResponse:
         """Delete a dataset by name."""
@@ -203,7 +194,7 @@ class DatasetService:
     ):
         dataset = self.rds_client.dataset.get(uid=dataset_uid)
         if not dataset:
-            raise DatasetNotFoundError(f"Dataset with uid {dataset_uid} does not exist")
+            raise ItemNotFoundError(f"Dataset with uid {dataset_uid} does not exist")
 
         path = dataset.private_path
         if which == "mock":

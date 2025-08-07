@@ -12,9 +12,11 @@ dependencies = [
     "requests>=2.32.0",
     "syft-core>=0.2.3",
     "uvicorn>=0.34.2",
-    "syft-rds==0.1.1-dev.5",
+    "syft-data-science",
 ]
-
 
 [tool.uv]
 dev-dependencies = []
+
+[tool.uv.sources]
+syft-data-science = { git = "https://github.com/OpenMined/syft-data-science.git", branch = "matei/rds-dashboard-integration" }

@@ -1,4 +1,3 @@
-# backend/api/services/auto_approve_service.py
 from typing import List
 
 from fastapi import HTTPException
@@ -7,7 +6,6 @@ from filelock import FileLock
 from loguru import logger
 from syft_core import Client as SyftBoxClient
 from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
 
 from ...models import ListAutoApproveResponse
 from ...utils import (

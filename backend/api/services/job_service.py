@@ -40,7 +40,6 @@ class JobService:
         except Exception as e:
             logger.error(f"Error opening job code: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
 
     async def approve(self, job_uid: str):
         """Approve a job request by its UID."""
@@ -58,7 +57,7 @@ class JobService:
         except Exception as e:
             logger.error(f"Error approving job: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
+
     async def reject(self, job_uid: str):
         """Reject a job request by its UID."""
         try:
@@ -75,5 +74,3 @@ class JobService:
         except Exception as e:
             logger.error(f"Error rejecting job: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
-

@@ -42,41 +42,46 @@ export const datasetsApi = {
     const data = (await apiClient.get(`/api/v1/datasets`)) as {
       datasets: DatasetResponse[]
     }
-    const jobs = await apiService.getJobs()
+    // const jobs = await apiService.getJobs()
 
-    const jobMap = jobs.jobs.reduce((map, job) => {
-      const jobs = map.get(job.datasetName) || []
-      map.set(job.datasetName, [...jobs, job])
-      return map
-    }, new Map<string, Job[]>())
+    // const jobMap = jobs.jobs.reduce((map, job) => {
+    //   const jobs = map.get(job.datasetName) || []
+    //   map.set(job.datasetName, [...jobs, job])
+    //   return map
+    // }, new Map<string, Job[]>())
 
     // Get the unique users count for each dataset
-    const uniqueUsersMap = jobs.jobs.reduce((map, job) => {
-      const uniqueEmails = map.get(job.datasetName) || new Set<string>()
-      uniqueEmails.add(job.requesterEmail)
-      map.set(job.datasetName, uniqueEmails)
-      return map
-    }, new Map<string, Set<string>>())
+    // const uniqueUsersMap = jobs.jobs.reduce((map, job) => {
+    //   const uniqueEmails = map.get(job.datasetName) || new Set<string>()
+    //   uniqueEmails.add(job.requesterEmail)
+    //   map.set(job.datasetName, uniqueEmails)
+    //   return map
+    // }, new Map<string, Set<string>>())
 
     // Get activity data for the past 12 weeks
-    const getWeekNumber = (date: Date): number => {
-      const now = new Date()
-      const diffTime = now.getTime() - date.getTime()
-      const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7))
-      return diffWeeks
-    }
+    // const getWeekNumber = (date: Date): number => {
+    //   const now = new Date()
+    //   const diffTime = now.getTime() - date.getTime()
+    //   const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7))
+    //   return diffWeeks
+    // }
 
-    const activityDataMap = jobs.jobs.reduce((map, job) => {
-      const weekNumber = getWeekNumber(job.requestedTime)
-      // Only consider jobs from the past 12 weeks
-      if (weekNumber >= 0 && weekNumber < 12) {
-        const currentActivity = map.get(job.datasetName) || Array(12).fill(0)
-        // weekNumber 0 is current week, so we need to reverse the index
-        currentActivity[11 - weekNumber]++
-        map.set(job.datasetName, currentActivity)
-      }
-      return map
-    }, new Map<string, number[]>())
+    // const activityDataMap = jobs.jobs.reduce((map, job) => {
+    //   const weekNumber = getWeekNumber(job.requestedTime)
+    //   // Only consider jobs from the past 12 weeks
+    //   if (weekNumber >= 0 && weekNumber < 12) {
+    //     const currentActivity = map.get(job.datasetName) || Array(12).fill(0)
+    //     // weekNumber 0 is current week, so we need to reverse the index
+    //     currentActivity[11 - weekNumber]++
+    //     map.set(job.datasetName, currentActivity)
+    //   }
+    //   return map
+    // }, new Map<string, number[]>())
+
+    // TODO: fix this when done integrating
+    const uniqueUsersMap = {}
+    const jobMap = {}
+    const activityDataMap = {}
 
     return {
       datasets: data.datasets.map((dataset) => ({

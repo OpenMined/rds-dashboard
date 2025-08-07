@@ -6,16 +6,15 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field, HttpUrl
 from syft_core import Client as SyftBoxClient
-from syft_rds.models.models import DatasetUpdate
-from syft_rds.client.exceptions import DatasetExistsError
+from syft_rds.client.exceptions import ItemExistsError
 
 from backend.dev import debug_delay
 
+from ...models import Dataset as DatasetModel
+from ...models import ListDatasetsResponse
 from ..dependencies import get_syftbox_client
 from ..services.dataset_service import DatasetService
 from ..services.shopify_service import ShopifyService
-from ...models import ListDatasetsResponse, Dataset as DatasetModel
-
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -58,7 +57,12 @@ async def dataset_create_from_file(
 ) -> DatasetModel:
     """Create a new dataset from an uploaded file."""
     service = DatasetService(syftbox_client)
-    return await service.create_dataset(dataset, mock_dataset, name, description)
+    return await service.create_dataset(
+        dataset_file=dataset,
+        mock_dataset_file=mock_dataset,
+        name=name,
+        description=description,
+    )
 
 
 class ImportShopifyRequestBody(BaseModel):
