@@ -42,9 +42,9 @@ async def get_datasets(
     response_model=DatasetModel,
 )
 async def dataset_create_from_file(
-    dataset: UploadFile = File(..., description="The dataset file to upload"),
-    mock_dataset: Optional[UploadFile] = File(
-        None, description="The mock dataset file to upload (optional)"
+    dataset: list[UploadFile] = File(..., description="The dataset files to upload"),
+    mock_dataset: Optional[list[UploadFile]] = File(
+        None, description="The mock dataset files to upload (optional)"
     ),
     name: str = Form(
         ..., min_length=1, max_length=100, description="The name of the dataset"
@@ -59,8 +59,8 @@ async def dataset_create_from_file(
     """Create a new dataset from an uploaded file."""
     service = DatasetService(syftbox_client)
     return await service.create_dataset(
-        dataset_file=dataset, 
-        mock_dataset_file=mock_dataset, 
+        dataset_files=dataset, 
+        mock_dataset_files=mock_dataset, 
         name=name, 
         description=description
     )

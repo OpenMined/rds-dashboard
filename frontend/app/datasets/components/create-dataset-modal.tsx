@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Upload, FolderOpen } from "lucide-react"
+import { Loader2, Upload, FolderOpen, FileIcon, Folder } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { apiService } from "@/lib/api/api"
 import { useDragDrop } from "@/components/drag-drop-context"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -34,10 +35,14 @@ export function CreateDatasetModal({
 }: CreateDatasetModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [mockFile, setMockFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<FileList | null>(null)
+  const [mockFiles, setMockFiles] = useState<FileList | null>(null)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [uploadMode, setUploadMode] = useState<"file" | "folder">("file")
+  const [mockUploadMode, setMockUploadMode] = useState<"file" | "folder">("file")
   const {
     isDragging,
     activeDropZone,
@@ -78,7 +83,8 @@ export function CreateDatasetModal({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (selectedFiles && selectedFiles.length > 0) {
-      setFile(selectedFiles[0])
+      setFiles(selectedFiles)
+      setFile(selectedFiles[0]) // Keep first file for backward compatibility
 
       // Auto-fill name from first file or folder
       const firstFile = selectedFiles[0]
@@ -97,15 +103,16 @@ export function CreateDatasetModal({
   const handleMockFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (selectedFiles && selectedFiles.length > 0) {
-      setMockFile(selectedFiles[0])
+      setMockFiles(selectedFiles)
+      setMockFile(selectedFiles[0]) // Keep first file for backward compatibility
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!file) {
-      setError("Please select a file")
+    if (!files || files.length === 0) {
+      setError("Please select a file or folder")
       return
     }
 
@@ -115,8 +122,8 @@ export function CreateDatasetModal({
     }
 
     // Mock dataset is mandatory in this variant
-    if (!mockFile) {
-      setError("Mock dataset file is required")
+    if (!mockFiles || mockFiles.length === 0) {
+      setError("Mock dataset file or folder is required")
       return
     }
 
@@ -126,13 +133,17 @@ export function CreateDatasetModal({
     try {
       const formData = new FormData()
 
-      // Add the file to FormData
-      formData.append("dataset", file)
+      // Add all files from the dataset folder/file
+      Array.from(files).forEach((file) => {
+        formData.append("dataset", file, file.webkitRelativePath || file.name)
+      })
       formData.append("name", name.trim())
       formData.append("description", description.trim() || "")
 
-      // Add mock file (mandatory in this variant)
-      formData.append("mock_dataset", mockFile)
+      // Add all files from the mock dataset folder/file
+      Array.from(mockFiles).forEach((file) => {
+        formData.append("mock_dataset", file, file.webkitRelativePath || file.name)
+      })
 
       createDatasetMutation.mutate(formData)
       // const result = await apiService.createDataset(formData);
@@ -156,6 +167,8 @@ export function CreateDatasetModal({
   const resetForm = () => {
     setFile(null)
     setMockFile(null)
+    setFiles(null)
+    setMockFiles(null)
     setName("")
     setDescription("")
     setError("")
@@ -194,7 +207,30 @@ export function CreateDatasetModal({
           onDrop={handleFileDrop}
         >
           <div className="space-y-2">
-            <Label htmlFor="dataset-file">Dataset File *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="dataset-file">Dataset *</Label>
+              <ToggleGroup
+                type="single"
+                value={uploadMode}
+                onValueChange={(value) => {
+                  if (value) {
+                    setUploadMode(value as "file" | "folder")
+                    // Clear selection when switching modes
+                    setFile(null)
+                    setFiles(null)
+                  }
+                }}
+              >
+                <ToggleGroupItem value="file" size="sm">
+                  <FileIcon className="mr-1 h-3 w-3" />
+                  Single file
+                </ToggleGroupItem>
+                <ToggleGroupItem value="folder" size="sm">
+                  <Folder className="mr-1 h-3 w-3" />
+                  Entire folder
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
             <div
               className={`relative rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 activeDropZone === "create-dataset" && isDragging
@@ -202,13 +238,26 @@ export function CreateDatasetModal({
                   : "border-muted-foreground/25 hover:border-muted-foreground/50"
               }`}
             >
-              <input
-                id="dataset-file"
-                type="file"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <label htmlFor="dataset-file" className="block cursor-pointer">
+              {uploadMode === "file" ? (
+                <input
+                  id="dataset-file"
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  multiple
+                />
+              ) : (
+                <input
+                  id="dataset-folder"
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                />
+              )}
+              <label htmlFor={uploadMode === "file" ? "dataset-file" : "dataset-folder"} className="block cursor-pointer">
                 <div className="space-y-2">
                   <FolderOpen className="text-muted-foreground mx-auto h-8 w-8" />
                   <div className="text-sm">
@@ -218,21 +267,44 @@ export function CreateDatasetModal({
                         : "Drop your file here or click to select"}
                     </span>
                     <p className="text-muted-foreground mt-1">
-                      Choose your dataset file
+                      Choose your dataset {uploadMode}
                     </p>
                   </div>
                 </div>
               </label>
             </div>
-            {file && (
+            {files && (
               <p className="text-muted-foreground text-sm">
-                Selected: {file.name}
+                Selected: {files.length > 1 ? `${files.length} files` : file?.name}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="mock-dataset-file">Mock Dataset File *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="mock-dataset-file">Mock Dataset *</Label>
+              <ToggleGroup
+                type="single"
+                value={mockUploadMode}
+                onValueChange={(value) => {
+                  if (value) {
+                    setMockUploadMode(value as "file" | "folder")
+                    // Clear selection when switching modes
+                    setMockFile(null)
+                    setMockFiles(null)
+                  }
+                }}
+              >
+                <ToggleGroupItem value="file" size="sm">
+                  <FileIcon className="mr-1 h-3 w-3" />
+                  Single file
+                </ToggleGroupItem>
+                <ToggleGroupItem value="folder" size="sm">
+                  <Folder className="mr-1 h-3 w-3" />
+                  Entire folder
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
             <div
               className={`relative rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 activeDropZone === "create-mock-dataset" && isDragging
@@ -244,14 +316,27 @@ export function CreateDatasetModal({
               onDragOver={(e) => handleDragOver(e, "create-mock-dataset")}
               onDrop={handleMockFileDrop}
             >
-              <input
-                id="mock-dataset-file"
-                type="file"
-                onChange={handleMockFileChange}
-                className="hidden"
-              />
+              {mockUploadMode === "file" ? (
+                <input
+                  id="mock-dataset-file"
+                  type="file"
+                  onChange={handleMockFileChange}
+                  className="hidden"
+                  multiple
+                />
+              ) : (
+                <input
+                  id="mock-dataset-folder"
+                  type="file"
+                  onChange={handleMockFileChange}
+                  className="hidden"
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                />
+              )}
               <label
-                htmlFor="mock-dataset-file"
+                htmlFor={mockUploadMode === "file" ? "mock-dataset-file" : "mock-dataset-folder"}
                 className="block cursor-pointer"
               >
                 <div className="space-y-2">
@@ -263,15 +348,15 @@ export function CreateDatasetModal({
                         : "Drop your mock file here or click to select"}
                     </span>
                     <p className="text-muted-foreground mt-1">
-                      Choose your mock dataset file
+                      Choose your mock dataset {mockUploadMode}
                     </p>
                   </div>
                 </div>
               </label>
             </div>
-            {mockFile && (
+            {mockFiles && (
               <p className="text-muted-foreground text-sm">
-                Selected: {mockFile.name}
+                Selected: {mockFiles.length > 1 ? `${mockFiles.length} files` : mockFile?.name}
               </p>
             )}
           </div>

@@ -58,42 +58,57 @@ class DatasetService:
 
     async def create_dataset(
         self,
-        dataset_file: UploadFile,
+        dataset_files: list[UploadFile],
         name: str,
         description: str,
-        mock_dataset_file: Optional[UploadFile] = None,
+        mock_dataset_files: Optional[list[UploadFile]] = None,
     ) -> DatasetModel:
         """Create a new dataset from uploaded file."""
         try:
-            # Validate file type
-            if not dataset_file.content_type:
+            # Validate that we have at least one file
+            if not dataset_files:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid file type for {dataset_file.filename}",
+                    detail="No dataset files provided",
                 )
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Save real dataset
+                # Save real dataset files preserving directory structure
                 real_path = Path(temp_dir) / "real"
                 real_path.mkdir(parents=True, exist_ok=True)
-                real_dataset_path = real_path / dataset_file.filename
-                real_dataset_path.write_bytes(await dataset_file.read())
-                logger.debug(
-                    f"Uploaded dataset temporarily saved to: {real_dataset_path}"
-                )
+
+                for f in dataset_files:
+                    # Get the relative path from the filename (includes directory structure)
+                    file_path = f.filename
+                    # Create full path
+                    full_path = real_path / file_path
+                    # Create parent directories if needed
+                    full_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Write file content
+                    full_path.write_bytes(await f.read())
+                    logger.debug(f"Saved file: {full_path}")
 
                 # Create mock dataset
                 mock_path = Path(temp_dir) / "mock"
                 mock_path.mkdir(parents=True, exist_ok=True)
 
-                if mock_dataset_file:
-                    # Use uploaded mock dataset file
-                    mock_dataset_path = mock_path / mock_dataset_file.filename
-                    mock_dataset_path.write_bytes(await mock_dataset_file.read())
-                    logger.debug(f"Uploaded mock dataset saved to: {mock_dataset_path}")
+                if mock_dataset_files:
+                    # Save mock dataset files preserving directory structure
+                    for f in mock_dataset_files:
+                        # Get the relative path from the filename
+                        file_path = f.filename
+                        # Create full path
+                        full_path = mock_path / file_path
+                        # Create parent directories if needed
+                        full_path.parent.mkdir(parents=True, exist_ok=True)
+                        # Write file content
+                        full_path.write_bytes(await f.read())
+                        logger.debug(f"Saved mock file: {full_path}")
                 else:
                     # Fall back to downloading mock data (temporary solution)
-                    mock_dataset_path = mock_path / dataset_file.filename
+                    # Use the first dataset file's name
+                    first_file_name = Path(dataset_files[0].filename).name
+                    mock_dataset_path = mock_path / first_file_name
                     await self._download_mock_dataset(mock_dataset_path)
 
                 # Create dummy description file (temporary fix for RDS bug)
