@@ -4,7 +4,7 @@ import { DatasetActionsSheet } from "@/app/datasets/components/dataset-actions-s
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { datasetsApi } from "@/lib/api/datasets"
-import type { Dataset } from "@/lib/api/types"
+import type { DatasetInfo } from "@/lib/api/types"
 import { useQuery } from "@tanstack/react-query"
 import { Database } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -12,7 +12,9 @@ import { DatasetCard } from "./components/dataset-card"
 import { AddDatasetAction } from "./components/add-datasets-action"
 
 export function DatasetsView() {
-  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null)
+  const [selectedDataset, setSelectedDataset] = useState<DatasetInfo | null>(
+    null,
+  )
   const [actionsSheetOpen, setActionsSheetOpen] = useState(false)
 
   const loadDatasetsQuery = useQuery({

@@ -5,11 +5,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import type { Dataset } from "@/lib/api/types"
+import type { DatasetInfo } from "@/lib/api/types"
 import {
   Calendar,
   ChartColumn,
-  HardDrive,
+  HardDriveIcon,
   TableIcon,
   Users,
 } from "lucide-react"
@@ -23,7 +23,7 @@ export function DatasetCard({
   dataset,
   onSelect,
 }: {
-  dataset: Dataset
+  dataset: DatasetInfo
   onSelect: () => void
 }) {
   return (
@@ -48,14 +48,14 @@ export function DatasetCard({
                       variant="secondary"
                       className="cursor-default gap-2 bg-green-100 text-green-800 transition-colors hover:bg-green-200 hover:text-green-900 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-800 dark:hover:text-green-100"
                     >
-                      <TableIcon size={12} /> {dataset.type.toUpperCase()}
+                      {/* <TableIcon size={12} /> {dataset.type.toUpperCase()} */}
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  {/* <TooltipContent>
                     Dataset format: {dataset.type.toUpperCase()}
-                  </TooltipContent>
+                  </TooltipContent> */}
                 </Tooltip>
-                {dataset.source?.type === "shopify" ? (
+                {/* {dataset.source?.type === "shopify" ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge
@@ -67,11 +67,11 @@ export function DatasetCard({
                     </TooltipTrigger>
                     <TooltipContent>Dataset linked from Shopify</TooltipContent>
                   </Tooltip>
-                ) : null}
+                ) : null} */}
               </div>
             </div>
             <CardDescription className="text-muted-foreground text-sm">
-              {dataset.description}
+              {dataset.summary}
             </CardDescription>
           </div>
 
@@ -81,40 +81,40 @@ export function DatasetCard({
               <TooltipTrigger asChild>
                 <DatasetMetaBadge>
                   <Users className="h-4 w-4 shrink-0" />
-                  {`${dataset.usersCount} ${
+                  {/* {`${dataset.usersCount} ${
                     dataset.usersCount === 1 ? "user" : "users"
-                  }`}
+                  }`} */}
                 </DatasetMetaBadge>
               </TooltipTrigger>
-              <TooltipContent collisionPadding={8}>
+              {/* <TooltipContent collisionPadding={8}>
                 {dataset.usersCount}{" "}
                 {dataset.usersCount === 1 ? "user has" : "users have"} requested
                 access to this dataset
-              </TooltipContent>
+              </TooltipContent> */}
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <DatasetMetaBadge>
                   <ChartColumn className="h-4 w-4 shrink-0" />
-                  {dataset.requestsCount} requests
+                  {/* {dataset.requestsCount} requests */}
                 </DatasetMetaBadge>
               </TooltipTrigger>
-              <TooltipContent>
+              {/* <TooltipContent>
                 {dataset.requestsCount} total access
                 {dataset.requestsCount === 1 ? " request" : " requests"}
-              </TooltipContent>
+              </TooltipContent> */}
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <DatasetMetaBadge>
                   <Calendar className="h-4 w-4 shrink-0" />
-                  Updated {timeAgo(dataset.lastUpdated.toISOString())}
+                  Updated {timeAgo(dataset.updatedAt.toISOString())}
                 </DatasetMetaBadge>
               </TooltipTrigger>
               <TooltipContent>
                 Last updated on{" "}
-                {dataset.lastUpdated.toLocaleDateString(undefined, {
+                {dataset.updatedAt.toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -127,18 +127,18 @@ export function DatasetCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <DatasetMetaBadge>
-                  <HardDrive className="h-4 w-4 shrink-0" />
-                  {dataset.size}
+                  <HardDriveIcon className="h-4 w-4 shrink-0" />
+                  {/* {dataset.size} */}
                 </DatasetMetaBadge>
               </TooltipTrigger>
-              <TooltipContent>
+              {/* <TooltipContent>
                 The dataset is {dataset.size} in size
-              </TooltipContent>
+              </TooltipContent> */}
             </Tooltip>
           </div>
 
           {/* User permissions pills */}
-          {dataset.permissions.length > 0 ? (
+          {/* {dataset.permissions.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {dataset.permissions.map((email, index) => (
                 <Badge
@@ -150,15 +150,16 @@ export function DatasetCard({
                 </Badge>
               ))}
             </div>
-          ) : null}
+          ) : null} */}
         </div>
-        <div className="mr-2 flex flex-col justify-end">
+        {/* <div className="mr-2 flex flex-col justify-end">
           {dataset.source?.type === "shopify" ? (
             <SyncShopifyDatasetAction dataset={dataset} />
           ) : null}
-        </div>
+        </div> */}
+
         {/* Right side - Activity graph */}
-        <ActivityGraph data={dataset.activityData} />
+        {/* <ActivityGraph data={dataset.activityData} /> */}
       </CardContent>
     </Card>
   )

@@ -1,4 +1,4 @@
-import type { DatasetResponse } from "./types"
+import type { DatasetModel } from "./types"
 
 export interface Job {
   uid: string
@@ -75,7 +75,7 @@ export const apiService = {
         throw new Error(error.detail || "Failed to create dataset")
       }
 
-      const data: DatasetResponse = await response.json()
+      const data: DatasetModel = await response.json()
       return {
         success: true,
         message: `Dataset "${formData.get("name")}" created successfully`,
@@ -104,23 +104,6 @@ export const apiService = {
         status: jobStatusMap[job.status],
       })),
     }
-  },
-
-  async deleteDataset(datasetName: string): Promise<{ message: string }> {
-    const response = await fetch(
-      `${getBaseUrl()}/api/v1/datasets/${encodeURIComponent(datasetName)}`,
-      {
-        method: "DELETE",
-      },
-    )
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail || "Failed to delete dataset")
-    }
-
-    const data = await response.json()
-    return data
   },
 
   async downloadDatasetPrivate(datasetUid: string): Promise<Response> {

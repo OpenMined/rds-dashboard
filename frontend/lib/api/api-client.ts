@@ -43,6 +43,13 @@ class ApiClient {
       body: JSON.stringify(data),
     })
   }
+
+  delete<T>(endpoint: string, data: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 export const apiClient = new ApiClient()

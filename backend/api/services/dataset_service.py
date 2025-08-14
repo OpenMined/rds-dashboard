@@ -11,6 +11,7 @@ from syft_core import Client as SyftBoxClient
 from syft_core.url import SyftBoxURL
 from syft_rds import init_session
 from syft_rds.client.exceptions import ItemNotFoundError
+from syft_datasets import SyftDatasetManager
 
 from ...models import Dataset as DatasetModel
 from ...models import ListDatasetsResponse
@@ -24,25 +25,26 @@ class DatasetService:
     def __init__(self, syftbox_client: SyftBoxClient):
         self.syftbox_client = syftbox_client
         self.rds_client = init_session(syftbox_client.email)
+        self.dataset_manager = SyftDatasetManager(syftbox_client)
 
     async def list_datasets(self) -> ListDatasetsResponse:
         """List all datasets with proper formatting."""
         datasets = [
             DatasetModel.model_validate(dataset)
-            for dataset in self.rds_client.dataset.get_all()
+            for dataset in self.dataset_manager.get_all()
         ]
 
         # Process datasets to fix temporary issues with RDS
         for dataset in datasets:
-            private_file_path = next(dataset.private_dir.iterdir(), None)
-            dataset.private = SyftBoxURL.from_path(
-                private_file_path, self.syftbox_client.workspace
-            )
+            # private_file_path = next(dataset.private_dir.iterdir(), None)
+            # dataset.private = SyftBoxURL.from_path(
+            #     private_file_path, self.syftbox_client.workspace
+            # )
 
-            mock_file_path = next(dataset.mock_dir.iterdir(), None)
-            dataset.mock = SyftBoxURL.from_path(
-                mock_file_path, self.syftbox_client.workspace
-            )
+            # mock_file_path = next(dataset.mock_dir.iterdir(), None)
+            # dataset.mock = SyftBoxURL.from_path(
+            #     mock_file_path, self.syftbox_client.workspace
+            # )
 
             dataset.source = find_source(dataset.uid)
 
@@ -92,13 +94,12 @@ class DatasetService:
                 dummy_readme_path = Path(temp_dir) / "dummy_readme.md"
                 dummy_readme_path.touch()
 
-                dataset = self.rds_client.dataset.create(
+                dataset = self.dataset_manager.create(
                     name=name,
                     summary=description,
                     private_path=private_path,
                     mock_path=mock_path,
                     readme_path=dummy_readme_path,
-                    # auto_approval=get_auto_approve_list(self.syftbox_client),
                 )
 
                 logger.debug(f"Dataset created: {dataset}")
@@ -116,11 +117,7 @@ class DatasetService:
     async def delete_dataset(self, dataset_name: str) -> JSONResponse:
         """Delete a dataset by name."""
         try:
-            delete_res = self.rds_client.dataset.delete(dataset_name)
-            if not delete_res:
-                raise HTTPException(
-                    status_code=404, detail=f"Unable to delete dataset '{dataset_name}'"
-                )
+            self.dataset_manager.delete(dataset_name, require_confirmation=False)
 
             logger.debug(f"Dataset {dataset_name} deleted successfully")
             return JSONResponse(

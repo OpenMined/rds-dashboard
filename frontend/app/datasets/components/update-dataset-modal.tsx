@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { datasetsApi, UpdateShopifyDatasetFormSchema } from "@/lib/api/datasets"
 import { ApiError, FormFieldError } from "@/lib/api/errors"
-import type { Dataset } from "@/lib/api/types"
+import type { DatasetInfo } from "@/lib/api/types"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Edit, Loader2, SaveIcon } from "lucide-react"
@@ -30,7 +30,7 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import type z from "zod"
 
-export function UpdateDatasetModal({ dataset }: { dataset: Dataset }) {
+export function UpdateDatasetModal({ dataset }: { dataset: DatasetInfo }) {
   const queryClient = useQueryClient()
   const form = useForm<z.infer<typeof UpdateShopifyDatasetFormSchema>>({
     resolver: zodResolver(UpdateShopifyDatasetFormSchema),

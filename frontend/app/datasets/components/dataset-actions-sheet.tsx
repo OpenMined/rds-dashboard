@@ -24,7 +24,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { apiService } from "@/lib/api/api"
-import type { Dataset } from "@/lib/api/types"
+import type { DatasetInfo } from "@/lib/api/types"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AlertTriangle,
@@ -38,7 +38,7 @@ import { datasetsApi } from "@/lib/api/datasets"
 import { toast } from "sonner"
 
 interface DatasetActionsSheetProps {
-  dataset: Dataset | null
+  dataset: DatasetInfo | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -56,16 +56,20 @@ export function DatasetActionsSheet({
 
   const deleteDatasetMutation = useMutation({
     mutationFn: ({ datasetName }: { datasetName: string }) =>
-      apiService.deleteDataset(datasetName),
+      datasetsApi.deleteDataset(datasetName),
     onError: (error) => {
       console.error(error)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["datasets"] })
       onOpenChange(false)
       toast.success("Success", {
-        description: "Removed dataset",
+        description: (
+          <div>
+            Removed dataset <strong>{dataset?.name}</strong>
+          </div>
+        ),
       })
+      return queryClient.invalidateQueries({ queryKey: ["datasets"] })
     },
   })
 
@@ -108,7 +112,7 @@ export function DatasetActionsSheet({
         <SheetContent className="scrollbar-thin overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-2xl">{dataset.name}</SheetTitle>
-            <SheetDescription>{dataset.description}</SheetDescription>
+            <SheetDescription>{dataset.summary}</SheetDescription>
           </SheetHeader>
           <div className="flex-1">
             {errorMessage && (
@@ -123,13 +127,13 @@ export function DatasetActionsSheet({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
                   <div className="text-muted-foreground">Format</div>
-                  <div className="font-medium">
+                  {/* <div className="font-medium">
                     {dataset.type.toUpperCase()}
-                  </div>
+                  </div> */}
                 </div>
                 <div className="space-y-1">
                   <div className="text-muted-foreground">Size</div>
-                  <div className="font-medium">{dataset.size}</div>
+                  {/* <div className="font-medium">{dataset.size}</div> */}
                 </div>
                 <div className="space-y-1">
                   <div className="text-muted-foreground">Created</div>
@@ -144,14 +148,11 @@ export function DatasetActionsSheet({
                 <div className="space-y-1">
                   <div className="text-muted-foreground">Last Updated</div>
                   <div className="font-medium">
-                    {new Date(dataset.lastUpdated).toLocaleDateString(
-                      undefined,
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      },
-                    )}
+                    {new Date(dataset.updatedAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </div>
                 </div>
               </div>
@@ -169,11 +170,11 @@ export function DatasetActionsSheet({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ActivityGraph
+                  {/* <ActivityGraph
                     data={dataset.activityData}
                     className="w-full"
                     chartHeightPx={128}
-                  />
+                  /> */}
                   <div className="text-muted-foreground mt-4 flex items-center justify-between text-xs">
                     <div>Total Requests: 1</div>
                     <div>Avg: 0/week</div>

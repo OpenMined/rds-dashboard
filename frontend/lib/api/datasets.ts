@@ -1,47 +1,15 @@
 import z from "zod"
 import { apiClient } from "./api-client"
-import type { Dataset, DatasetResponse } from "./types"
+import type { DatasetInfo, DatasetModel } from "./types"
 import { formatBytes } from "../utils"
 import { apiService, type Job } from "./api"
 
-export const AddShopifyDatasetFormSchema = z.object({
-  name: z.string().min(1, { message: "A dataset name is required" }),
-  url: z.string().pipe(
-    z.preprocess(
-      (val) => {
-        if (val === "") return val
-        if (!val.startsWith("https://") && !val.startsWith("http://"))
-          return "https://" + val
-        return val
-      },
-      z.url({
-        protocol: /^(https?)?$/,
-        hostname: z.regexes.domain,
-        error: (iss) => {
-          return iss.input === "" ? "The store URL is required" : undefined
-        },
-      }),
-    ),
-  ),
-  pat: z
-    .string()
-    .min(1, { message: "The access token is required" })
-    .regex(/^shpat_[0-9a-f]{32}$/, {
-      error: () => "Invalid access token format",
-    }),
-  description: z.string().optional(),
-})
-
-export const UpdateShopifyDatasetFormSchema = z.object({
-  name: z.string().optional(),
-  description: z.string().optional(),
-})
-
 export const datasetsApi = {
-  async getDatasets(): Promise<{ datasets: Dataset[] }> {
+  async getDatasets(): Promise<{ datasets: DatasetInfo[] }> {
     const data = (await apiClient.get(`/api/v1/datasets`)) as {
-      datasets: DatasetResponse[]
+      datasets: DatasetModel[]
     }
+
     // const jobs = await apiService.getJobs()
 
     // const jobMap = jobs.jobs.reduce((map, job) => {
@@ -83,23 +51,27 @@ export const datasetsApi = {
     const jobMap = {}
     const activityDataMap = {}
 
-    return {
+    const result = {
       datasets: data.datasets.map((dataset) => ({
         uid: dataset.uid,
         name: dataset.name,
-        description: dataset.summary,
-        size: formatBytes(dataset.privateSize),
-        type: dataset.private.split(".").pop() || "unknown",
         createdAt: new Date(dataset.createdAt),
-        lastUpdated: new Date(dataset.updatedAt),
-        accessRequests: 0,
-        permissions: [],
-        usersCount: uniqueUsersMap.get(dataset.name)?.size || 0,
-        requestsCount: jobMap.get(dataset.name)?.length || 0,
-        activityData: activityDataMap.get(dataset.name) || Array(12).fill(0),
-        source: dataset.source,
+        updatedAt: new Date(dataset.updatedAt),
+        summary: dataset.summary,
+        // size: formatBytes(dataset.privateSize),
+        // type: dataset.private.split(".").pop() || "unknown",
+        // accessRequests: 0,
+        // permissions: [],
+        // usersCount: uniqueUsersMap.get(dataset.name)?.size || 0,
+        // requestsCount: jobMap.get(dataset.name)?.length || 0,
+        // activityData: activityDataMap.get(dataset.name) || Array(12).fill(0),
+        // source: dataset.source,
       })),
     }
+
+    console.debug(JSON.stringify({ data, result }, null, 2))
+
+    return result
   },
   addShopifyDataset: (data: z.infer<typeof AddShopifyDatasetFormSchema>) => {
     return apiClient.post<{}>("/api/v1/datasets/import-from-shopify", data)
@@ -114,8 +86,14 @@ export const datasetsApi = {
     return apiClient.put<{}>(`/api/v1/datasets/update/${uid}`, data)
   },
   syncShopifyDataset: (uid: string) => {
-    return apiClient.put<{ dataset: Dataset }>(
+    return apiClient.put<{ dataset: DatasetInfo }>(
       `/api/v1/datasets/sync-shopify-dataset/${uid}`,
+      {},
+    )
+  },
+  deleteDataset(datasetName: string): Promise<{}> {
+    return apiClient.delete(
+      `/api/v1/datasets/${encodeURIComponent(datasetName)}`,
       {},
     )
   },
@@ -123,3 +101,40 @@ export const datasetsApi = {
     return apiClient.get(`/api/v1/datasets/open-local-directory/${uid}`)
   },
 }
+
+// === Validators ===
+
+export const AddShopifyDatasetFormSchema = z.object({
+  name: z.string().min(1, { message: "A dataset name is required" }),
+  url: z.string().pipe(
+    z.preprocess(
+      (val) => {
+        if (val === "") return val
+        if (!val.startsWith("https://") && !val.startsWith("http://"))
+          return "https://" + val
+        return val
+      },
+      z.url({
+        protocol: /^(https?)?$/,
+        hostname: z.regexes.domain,
+        error: (iss) => {
+          return iss.input === "" ? "The store URL is required" : undefined
+        },
+      }),
+    ),
+  ),
+  pat: z
+    .string()
+    .min(1, { message: "The access token is required" })
+    .regex(/^shpat_[0-9a-f]{32}$/, {
+      error: () => "Invalid access token format",
+    }),
+  description: z.string().optional(),
+})
+
+export const UpdateShopifyDatasetFormSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+})
+
+// === Processors ===
