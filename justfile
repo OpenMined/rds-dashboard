@@ -36,6 +36,11 @@ run-jupyter jupyter_args="":
     uv run --frozen --with "jupyterlab" \
         jupyter lab {{ jupyter_args }}
 
+[group('utils')]
+clean:
+    #!/bin/sh
+    find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 [group('dev')]
@@ -53,7 +58,7 @@ dev config_path="":
 
     # concurrently run the server and frontend
     bunx concurrently --names "server,frontend" --prefix-colors "red,green" \
-        "uv run --no-sync uvicorn backend.main:app --reload --port ${API_PORT}" \
+        "uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
         "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT} bun run --cwd frontend dev"
 
 [group('server')]
