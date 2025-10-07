@@ -1,6 +1,5 @@
 from pathlib import Path
 import tempfile
-import traceback
 from typing import Optional
 
 from fastapi import HTTPException
@@ -8,7 +7,7 @@ from loguru import logger
 import requests
 from syft_core import Client as SyftBoxClient
 from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
 
 from ...lib.shopify import shopify_json_to_dataframe
 from ...models import Dataset as DatasetModel

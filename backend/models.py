@@ -1,12 +1,12 @@
 # Standard library imports
-from typing import List, Literal, Union
+from typing import List, Union
 
 # Third-party imports
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 # Local imports
-from syft_rds.models.models import Dataset as SyftDataset, Job as SyftJob
+from syft_rds.models import Dataset as SyftDataset, Job as SyftJob
 
 from .sources import ShopifySource
 

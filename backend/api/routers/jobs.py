@@ -37,7 +37,9 @@ async def approve_job(
 ):
     service = JobService(syftbox_client)
     await service.approve(job_uid)
-    return JSONResponse(content={"message": f"Job {job_uid} approved."}, status_code=200)
+    return JSONResponse(
+        content={"message": f"Job {job_uid} approved."}, status_code=200
+    )
 
 
 @router.post(
@@ -52,7 +54,9 @@ async def reject_job(
 ):
     service = JobService(syftbox_client)
     await service.reject(job_uid)
-    return JSONResponse(content={"message": f"Job {job_uid} rejected."}, status_code=200)
+    return JSONResponse(
+        content={"message": f"Job {job_uid} rejected."}, status_code=200
+    )
 
 
 @router.get(

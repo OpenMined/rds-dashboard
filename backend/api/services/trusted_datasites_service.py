@@ -7,7 +7,7 @@ from filelock import FileLock
 from loguru import logger
 from syft_core import Client as SyftBoxClient
 from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
 
 from ...models import ListAutoApproveResponse
 from ...utils import (
@@ -84,6 +84,5 @@ class TrustedDatasitesService:
                 )
             except Exception as e:
                 logger.error(
-                    f"Failed to update dataset {dataset.name} "
-                    f"with auto-approval: {e}"
+                    f"Failed to update dataset {dataset.name} with auto-approval: {e}"
                 )

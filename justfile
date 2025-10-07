@@ -30,6 +30,12 @@ alias rs := prod
     just --list
 
 [group('utils')]
+setup:
+    uv sync
+    source .venv/bin/activate
+    bun install --cwd frontend
+
+[group('utils')]
 run-jupyter jupyter_args="":
     # uv sync
 
@@ -40,6 +46,7 @@ run-jupyter jupyter_args="":
 clean:
     #!/bin/sh
     find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    echo "{{ _green }}✓ Clean complete!{{ _nc }}"
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -49,16 +56,17 @@ dev config_path="":
     set -euo pipefail
 
     # if the config_path is not empty string, set syftbox client config path
+    CONFIG_FLAG=""
     if [ "{{config_path}}" != "" ]; then
-        echo "${_green}Using custom config path: ${config_path}${_nc}"
-        export SYFTBOX_CLIENT_CONFIG_PATH="${config_path}"
+        echo -e "{{_green}}Using custom config path: {{config_path}}{{_nc}}"
+        CONFIG_FLAG="SYFTBOX_CLIENT_CONFIG_PATH={{config_path}}"
     fi
 
     export API_PORT=8001
 
     # concurrently run the server and frontend
-    bunx concurrently --names "server,frontend" --prefix-colors "red,green" \
-        "uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
+    bunx concurrently --names "server,frontend" --prefix-colors "blue,green" \
+        "${CONFIG_FLAG} uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
         "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT} bun run --cwd frontend dev"
 
 [group('server')]

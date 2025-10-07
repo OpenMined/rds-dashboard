@@ -11,7 +11,7 @@ import requests
 from syft_core import Client as SyftBoxClient
 from syft_core.url import SyftBoxURL
 from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
 from syft_rds.client.exceptions import DatasetNotFoundError
 
 from ...models import ListDatasetsResponse, Dataset as DatasetModel

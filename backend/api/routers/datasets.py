@@ -6,10 +6,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field, HttpUrl
 from syft_core import Client as SyftBoxClient
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
 from syft_rds.client.exceptions import DatasetExistsError
 
-from backend.dev import debug_delay
 
 from ..dependencies import get_syftbox_client
 from ..services.dataset_service import DatasetService
@@ -59,10 +58,10 @@ async def dataset_create_from_file(
     """Create a new dataset from an uploaded file."""
     service = DatasetService(syftbox_client)
     return await service.create_dataset(
-        dataset_files=dataset, 
-        mock_dataset_files=mock_dataset, 
-        name=name, 
-        description=description
+        dataset_files=dataset,
+        mock_dataset_files=mock_dataset,
+        name=name,
+        description=description,
     )
 
 
