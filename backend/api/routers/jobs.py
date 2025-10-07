@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
-from syft_core import Client as SyftBoxClient
 
-from ..dependencies import get_syftbox_client
-from ..services.job_service import JobService
-from ...models import ListJobsResponse
 from fastapi import status
 from fastapi.responses import JSONResponse
+from syft_rds import RDSClient
 
+from ..dependencies import get_rds_client
+from ..services.job_service import JobService
+from ...models import ListJobsResponse
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -18,10 +18,10 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
     response_model=ListJobsResponse,
 )
 async def list_jobs(
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ) -> ListJobsResponse:
     """Get all jobs in the system."""
-    service = JobService(syftbox_client)
+    service = JobService(rds_client)
     return await service.list_jobs()
 
 
@@ -33,9 +33,9 @@ async def list_jobs(
 )
 async def approve_job(
     job_uid: str,
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ):
-    service = JobService(syftbox_client)
+    service = JobService(rds_client)
     await service.approve(job_uid)
     return JSONResponse(
         content={"message": f"Job {job_uid} approved."}, status_code=200
@@ -50,9 +50,9 @@ async def approve_job(
 )
 async def reject_job(
     job_uid: str,
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ):
-    service = JobService(syftbox_client)
+    service = JobService(rds_client)
     await service.reject(job_uid)
     return JSONResponse(
         content={"message": f"Job {job_uid} rejected."}, status_code=200
@@ -66,9 +66,9 @@ async def reject_job(
 )
 async def open_job_code(
     job_uid: str,
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ):
     """Open job code directory in the system file browser."""
-    service = JobService(syftbox_client)
+    service = JobService(rds_client)
     await service.open_job_code(job_uid)
     return {"message": f"Opened code directory for job {job_uid}"}

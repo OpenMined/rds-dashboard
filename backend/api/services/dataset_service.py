@@ -8,11 +8,10 @@ from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import requests
-from syft_core import Client as SyftBoxClient
 from syft_core.url import SyftBoxURL
-from syft_rds import init_session
 from syft_rds.models import DatasetUpdate
 from syft_rds.client.exceptions import DatasetNotFoundError
+from syft_rds import RDSClient
 
 from ...models import ListDatasetsResponse, Dataset as DatasetModel
 from ...sources import find_source
@@ -22,9 +21,9 @@ from ...utils import get_auto_approve_list
 class DatasetService:
     """Service class for dataset-related operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def list_datasets(self) -> ListDatasetsResponse:
         """List all datasets with proper formatting."""

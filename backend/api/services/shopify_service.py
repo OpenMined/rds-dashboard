@@ -5,9 +5,8 @@ from typing import Optional
 from fastapi import HTTPException
 from loguru import logger
 import requests
-from syft_core import Client as SyftBoxClient
-from syft_rds import init_session
 from syft_rds.models import DatasetUpdate
+from syft_rds import RDSClient
 
 from ...lib.shopify import shopify_json_to_dataframe
 from ...models import Dataset as DatasetModel
@@ -18,9 +17,9 @@ from ...utils import get_auto_approve_list
 class ShopifyService:
     """Service class for Shopify-related operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def create_dataset_from_shopify(
         self, url: str, name: str, pat: str, description: Optional[str] = None

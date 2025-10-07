@@ -74,7 +74,7 @@ clean:
 # ---------------------------------------------------------------------------------------------------------------------
 
 [group('dev')]
-dev config_path="":
+dev config_path="" port="8001" frontend_port="3000":
     #!/bin/bash
     set -euo pipefail
 
@@ -85,12 +85,25 @@ dev config_path="":
         CONFIG_FLAG="SYFTBOX_CLIENT_CONFIG_PATH={{config_path}}"
     fi
 
-    export API_PORT=8001
+    # Find available port starting from the requested port
+    find_available_port() {
+        local port=$1
+        while lsof -i :$port >/dev/null 2>&1; do
+            echo -e "{{_yellow}}Port $port is in use, trying next port...{{_nc}}" >&2
+            port=$((port + 1))
+        done
+        echo $port
+    }
+
+    export API_PORT=$(find_available_port {{port}})
+    export FRONTEND_PORT=$(find_available_port {{frontend_port}})
+    echo -e "{{_cyan}}Starting backend on port ${API_PORT}{{_nc}}"
+    echo -e "{{_cyan}}Starting frontend on port ${FRONTEND_PORT}{{_nc}}"
 
     # concurrently run the server and frontend
     bunx concurrently --names "server,frontend" --prefix-colors "blue,green" \
         "${CONFIG_FLAG} uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
-        "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT} bun run --cwd frontend dev"
+        "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT} bun run --cwd frontend dev -- -p ${FRONTEND_PORT}"
 
 [group('server')]
 prod config_path="":
