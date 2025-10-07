@@ -1,13 +1,16 @@
 import { parseErrorResponse } from "./errors"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
+import { getApiBaseUrl } from "./config"
 
 class ApiClient {
+  private getBaseUrl(): string {
+    return getApiBaseUrl();
+  }
+
   private async request<T>(
     endpoint: string,
     options?: RequestInit,
   ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
+    const url = `${this.getBaseUrl()}${endpoint}`
 
     const config: RequestInit = {
       ...options,
