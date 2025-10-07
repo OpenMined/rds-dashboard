@@ -78,10 +78,18 @@ class DatasetService:
                 real_path.mkdir(parents=True, exist_ok=True)
 
                 for f in dataset_files:
-                    # Get the relative path from the filename (includes directory structure)
-                    file_path = f.filename
+                    # Strip the top-level folder name but preserve subdirectories
+                    # since when we upload the dataset, the dataset name is the top-level folder
+                    # e.g., "diabetes/part01/train.csv" -> "part01/train.csv"
+                    file_path = Path(f.filename)
+                    relative_path = (
+                        Path(*file_path.parts[1:])
+                        if len(file_path.parts) > 1
+                        else file_path
+                    )
+
                     # Create full path
-                    full_path = real_path / file_path
+                    full_path = real_path / relative_path
                     # Create parent directories if needed
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     # Write file content
@@ -93,12 +101,16 @@ class DatasetService:
                 mock_path.mkdir(parents=True, exist_ok=True)
 
                 if mock_dataset_files:
-                    # Save mock dataset files preserving directory structure
+                    # Save mock dataset files, stripping top-level folder
                     for f in mock_dataset_files:
-                        # Get the relative path from the filename
-                        file_path = f.filename
+                        file_path = Path(f.filename)
+                        relative_path = (
+                            Path(*file_path.parts[1:])
+                            if len(file_path.parts) > 1
+                            else file_path
+                        )
                         # Create full path
-                        full_path = mock_path / file_path
+                        full_path = mock_path / relative_path
                         # Create parent directories if needed
                         full_path.parent.mkdir(parents=True, exist_ok=True)
                         # Write file content
