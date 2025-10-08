@@ -56,9 +56,12 @@ class ShopifyService:
             mock_dataset_path = mock_path / "shopify.csv"
             await self._download_mock_dataset(mock_dataset_path)
 
-            # Create dummy description file
-            dummy_description_path = Path(temp_dir) / "dummy_description.txt"
-            dummy_description_path.touch()
+            # Create README.md with description if provided
+            readme_path = Path(temp_dir) / "README.md"
+            if description:
+                readme_path.write_text(description)
+            else:
+                readme_path.touch()  # Create empty README.md
 
             # Create dataset
             dataset = self.rds_client.dataset.create(
@@ -66,7 +69,7 @@ class ShopifyService:
                 summary=description or f"Shopify data from {url}",
                 path=real_path,
                 mock_path=mock_path,
-                description_path=dummy_description_path,
+                description_path=readme_path,
                 auto_approval=get_auto_approve_list(self.syftbox_client),
             )
 
