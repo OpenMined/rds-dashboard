@@ -118,4 +118,6 @@ prod config_path="":
 
     # build the frontend
     bun run --cwd frontend build
-    uv run uvicorn backend.main:app
+
+    # Run in production mode (debug=false to enable static file serving)
+    DEBUG=false uv run uvicorn backend.main:app
