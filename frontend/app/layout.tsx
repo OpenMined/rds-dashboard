@@ -6,6 +6,7 @@ import Providers from "./providers"
 import { cn } from "@/lib/utils"
 import { Navigation } from "./components/navigation"
 import { Header } from "./components/header"
+import { ApiConfigInit } from "@/components/api-config-init"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.className, "bg-background min-h-screen")}>
+        <ApiConfigInit />
         <Providers>
           {/* <Header /> */}
           <div className="container mx-auto px-4 py-8">

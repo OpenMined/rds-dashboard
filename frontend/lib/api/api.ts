@@ -1,4 +1,4 @@
-import type { DatasetResponse } from "./types"
+import { getApiBaseUrl } from "./config"
 
 export interface Job {
   uid: string
@@ -52,17 +52,13 @@ interface AutoApproveResponse {
   datasites: string[]
 }
 
-const getBaseUrl = () => {
-  return process.env.NEXT_PUBLIC_API_URL || ""
-}
-
 export const apiService = {
   async createDataset(
     formData: FormData,
   ): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(
-        `${getBaseUrl()}/api/v1/datasets/create-from-file`,
+        `${getApiBaseUrl()}/api/v1/datasets/create-from-file`,
         {
           method: "POST",
           body: formData,
@@ -75,7 +71,7 @@ export const apiService = {
         throw new Error(error.detail || "Failed to create dataset")
       }
 
-      const data: DatasetResponse = await response.json()
+      await response.json()
       return {
         success: true,
         message: `Dataset "${formData.get("name")}" created successfully`,
@@ -87,7 +83,7 @@ export const apiService = {
   },
 
   async getJobs(): Promise<{ jobs: Job[] }> {
-    const response = await fetch(`${getBaseUrl()}/api/v1/jobs`)
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/jobs`)
     if (!response.ok) {
       const error = await response.json()
       throw new Error(error.detail || "Failed to fetch jobs")
@@ -108,7 +104,7 @@ export const apiService = {
 
   async deleteDataset(datasetName: string): Promise<{ message: string }> {
     const response = await fetch(
-      `${getBaseUrl()}/api/v1/datasets/${encodeURIComponent(datasetName)}`,
+      `${getApiBaseUrl()}/api/v1/datasets/${encodeURIComponent(datasetName)}`,
       {
         method: "DELETE",
       },
@@ -125,7 +121,7 @@ export const apiService = {
 
   async downloadDatasetPrivate(datasetUid: string): Promise<Response> {
     const response = await fetch(
-      `${getBaseUrl()}/api/v1/datasets/${datasetUid}/private`,
+      `${getApiBaseUrl()}/api/v1/datasets/${datasetUid}/private`,
       {
         method: "GET",
       },

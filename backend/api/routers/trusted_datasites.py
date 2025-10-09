@@ -3,9 +3,9 @@ from typing import List
 from fastapi import APIRouter, Body, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from syft_core import Client as SyftBoxClient
+from syft_rds import RDSClient
 
-from ..dependencies import get_syftbox_client
+from ..dependencies import get_rds_client
 from ..services.trusted_datasites_service import TrustedDatasitesService
 from ...models import ListAutoApproveResponse
 
@@ -20,10 +20,10 @@ router = APIRouter(prefix="/trusted-datasites", tags=["trusted-datasites"])
     description="Retrieve the list of datasites that are auto-approved",
 )
 async def get_auto_approved_datasites(
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ) -> ListAutoApproveResponse:
     """Get the current list of auto-approved datasites."""
-    service = TrustedDatasitesService(syftbox_client)
+    service = TrustedDatasitesService(rds_client)
     return await service.get_auto_approved_datasites()
 
 
@@ -40,8 +40,8 @@ class SetTrustedDatasitesBody(BaseModel):
 )
 async def set_auto_approved_datasites(
     data: SetTrustedDatasitesBody,
-    syftbox_client: SyftBoxClient = Depends(get_syftbox_client),
+    rds_client: RDSClient = Depends(get_rds_client),
 ) -> JSONResponse:
     """Update the auto-approve list with new emails."""
-    service = TrustedDatasitesService(syftbox_client)
+    service = TrustedDatasitesService(rds_client)
     return await service.set_auto_approved_datasites(data.datasites)

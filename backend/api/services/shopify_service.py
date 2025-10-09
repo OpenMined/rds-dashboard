@@ -1,14 +1,12 @@
 from pathlib import Path
 import tempfile
-import traceback
 from typing import Optional
 
 from fastapi import HTTPException
 from loguru import logger
 import requests
-from syft_core import Client as SyftBoxClient
-from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
+from syft_rds import RDSClient
 
 from ...lib.shopify import shopify_json_to_dataframe
 from ...models import Dataset as DatasetModel
@@ -19,9 +17,9 @@ from ...utils import get_auto_approve_list
 class ShopifyService:
     """Service class for Shopify-related operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def create_dataset_from_shopify(
         self, url: str, name: str, pat: str, description: Optional[str] = None
@@ -58,9 +56,12 @@ class ShopifyService:
             mock_dataset_path = mock_path / "shopify.csv"
             await self._download_mock_dataset(mock_dataset_path)
 
-            # Create dummy description file
-            dummy_description_path = Path(temp_dir) / "dummy_description.txt"
-            dummy_description_path.touch()
+            # Create README.md with description if provided
+            readme_path = Path(temp_dir) / "README.md"
+            if description:
+                readme_path.write_text(description)
+            else:
+                readme_path.touch()  # Create empty README.md
 
             # Create dataset
             dataset = self.rds_client.dataset.create(
@@ -68,7 +69,7 @@ class ShopifyService:
                 summary=description or f"Shopify data from {url}",
                 path=real_path,
                 mock_path=mock_path,
-                description_path=dummy_description_path,
+                description_path=readme_path,
                 auto_approval=get_auto_approve_list(self.syftbox_client),
             )
 

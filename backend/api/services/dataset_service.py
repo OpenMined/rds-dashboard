@@ -8,11 +8,10 @@ from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import requests
-from syft_core import Client as SyftBoxClient
 from syft_core.url import SyftBoxURL
-from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
 from syft_rds.client.exceptions import DatasetNotFoundError
+from syft_rds import RDSClient
 
 from ...models import ListDatasetsResponse, Dataset as DatasetModel
 from ...sources import find_source
@@ -22,9 +21,9 @@ from ...utils import get_auto_approve_list
 class DatasetService:
     """Service class for dataset-related operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def list_datasets(self) -> ListDatasetsResponse:
         """List all datasets with proper formatting."""
@@ -78,10 +77,18 @@ class DatasetService:
                 real_path.mkdir(parents=True, exist_ok=True)
 
                 for f in dataset_files:
-                    # Get the relative path from the filename (includes directory structure)
-                    file_path = f.filename
+                    # Strip the top-level folder name but preserve subdirectories
+                    # since when we upload the dataset, the dataset name is the top-level folder
+                    # e.g., "diabetes/part01/train.csv" -> "part01/train.csv"
+                    file_path = Path(f.filename)
+                    relative_path = (
+                        Path(*file_path.parts[1:])
+                        if len(file_path.parts) > 1
+                        else file_path
+                    )
+
                     # Create full path
-                    full_path = real_path / file_path
+                    full_path = real_path / relative_path
                     # Create parent directories if needed
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     # Write file content
@@ -93,12 +100,16 @@ class DatasetService:
                 mock_path.mkdir(parents=True, exist_ok=True)
 
                 if mock_dataset_files:
-                    # Save mock dataset files preserving directory structure
+                    # Save mock dataset files, stripping top-level folder
                     for f in mock_dataset_files:
-                        # Get the relative path from the filename
-                        file_path = f.filename
+                        file_path = Path(f.filename)
+                        relative_path = (
+                            Path(*file_path.parts[1:])
+                            if len(file_path.parts) > 1
+                            else file_path
+                        )
                         # Create full path
-                        full_path = mock_path / file_path
+                        full_path = mock_path / relative_path
                         # Create parent directories if needed
                         full_path.parent.mkdir(parents=True, exist_ok=True)
                         # Write file content
@@ -111,9 +122,12 @@ class DatasetService:
                     mock_dataset_path = mock_path / first_file_name
                     await self._download_mock_dataset(mock_dataset_path)
 
-                # Create dummy description file (temporary fix for RDS bug)
-                dummy_description_path = Path(temp_dir) / "dummy_description.txt"
-                dummy_description_path.touch()
+                # Create README.md with description if provided
+                readme_path = Path(temp_dir) / "README.md"
+                if description:
+                    readme_path.write_text(description)
+                else:
+                    readme_path.touch()  # Create empty README.md
 
                 # Create dataset in RDS
                 dataset = self.rds_client.dataset.create(
@@ -121,7 +135,7 @@ class DatasetService:
                     summary=description,
                     path=real_path,
                     mock_path=mock_path,
-                    description_path=dummy_description_path,
+                    description_path=readme_path,
                     auto_approval=get_auto_approve_list(self.syftbox_client),
                 )
 

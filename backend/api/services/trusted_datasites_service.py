@@ -5,9 +5,8 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from filelock import FileLock
 from loguru import logger
-from syft_core import Client as SyftBoxClient
-from syft_rds import init_session
-from syft_rds.models.models import DatasetUpdate
+from syft_rds.models import DatasetUpdate
+from syft_rds import RDSClient
 
 from ...models import ListAutoApproveResponse
 from ...utils import (
@@ -20,9 +19,9 @@ from ...utils import (
 class TrustedDatasitesService:
     """Service class for auto-approval operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def set_auto_approved_datasites(self, datasites: List[str]) -> JSONResponse:
         """Set the list of auto-approved datasites."""
@@ -84,6 +83,5 @@ class TrustedDatasitesService:
                 )
             except Exception as e:
                 logger.error(
-                    f"Failed to update dataset {dataset.name} "
-                    f"with auto-approval: {e}"
+                    f"Failed to update dataset {dataset.name} with auto-approval: {e}"
                 )

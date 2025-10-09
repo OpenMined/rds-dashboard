@@ -2,8 +2,7 @@ import webbrowser
 
 from fastapi import HTTPException
 from loguru import logger
-from syft_core import Client as SyftBoxClient
-from syft_rds import init_session
+from syft_rds import RDSClient
 
 from ...models import ListJobsResponse
 
@@ -11,9 +10,9 @@ from ...models import ListJobsResponse
 class JobService:
     """Service class for job-related operations."""
 
-    def __init__(self, syftbox_client: SyftBoxClient):
-        self.syftbox_client = syftbox_client
-        self.rds_client = init_session(syftbox_client.email)
+    def __init__(self, rds_client: RDSClient):
+        self.rds_client = rds_client
+        self.syftbox_client = rds_client._syftbox_client
 
     async def list_jobs(self) -> ListJobsResponse:
         """List all jobs in the system."""
@@ -40,7 +39,6 @@ class JobService:
         except Exception as e:
             logger.error(f"Error opening job code: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
 
     async def approve(self, job_uid: str):
         """Approve a job request by its UID."""
@@ -58,7 +56,7 @@ class JobService:
         except Exception as e:
             logger.error(f"Error approving job: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
+
     async def reject(self, job_uid: str):
         """Reject a job request by its UID."""
         try:
@@ -75,5 +73,3 @@ class JobService:
         except Exception as e:
             logger.error(f"Error rejecting job: {e}")
             raise HTTPException(status_code=500, detail=str(e))
-        
-
