@@ -10,4 +10,7 @@ export const jobsApi = {
   rejectJob: (jobUid: string) => {
     return apiClient.post<{}>(`/api/v1/jobs/reject/${jobUid}`, {})
   },
+  runJob: (jobUid: string) => {
+    return apiClient.post<{}>(`/api/v1/jobs/run/${jobUid}`, {})
+  },
 }

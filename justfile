@@ -85,20 +85,28 @@ dev config_path="" port="8001" frontend_port="3000":
         CONFIG_FLAG="SYFTBOX_CLIENT_CONFIG_PATH={{config_path}}"
     fi
 
-    # Find available port starting from the requested port
-    find_available_port() {
-        local port=$1
-        while lsof -i :$port >/dev/null 2>&1; do
-            echo -e "{{_yellow}}Port $port is in use, trying next port...{{_nc}}" >&2
-            port=$((port + 1))
+    # Find available port pair (frontend and backend) ensuring both are free
+    find_available_port_pair() {
+        local frontend_port=$1
+        while true; do
+            local backend_port=$((frontend_port + 5000))
+            # Check if frontend port is available
+            if ! lsof -i :$frontend_port >/dev/null 2>&1; then
+                # Check if corresponding backend port is available
+                if ! lsof -i :$backend_port >/dev/null 2>&1; then
+                    echo $frontend_port
+                    return
+                fi
+            fi
+            echo -e "{{_yellow}}Port pair $frontend_port:$backend_port in use, trying next...{{_nc}}" >&2
+            frontend_port=$((frontend_port + 1))
         done
-        echo $port
     }
 
-    export API_PORT=$(find_available_port {{port}})
-    export FRONTEND_PORT=$(find_available_port {{frontend_port}})
-    echo -e "{{_cyan}}Starting backend on port ${API_PORT}{{_nc}}"
+    export FRONTEND_PORT=$(find_available_port_pair {{frontend_port}})
+    export API_PORT=$((FRONTEND_PORT + 5000))
     echo -e "{{_cyan}}Starting frontend on port ${FRONTEND_PORT}{{_nc}}"
+    echo -e "{{_cyan}}Starting backend on port ${API_PORT}{{_nc}}"
 
     # concurrently run the server and frontend
     bunx concurrently --names "server,frontend" --prefix-colors "blue,green" \

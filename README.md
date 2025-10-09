@@ -29,7 +29,7 @@
 
 The app will be available at:
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:8001
+- Backend API: http://localhost:8000
 
 Both frontend and backend have hot-reload enabled during development.
 
@@ -40,14 +40,16 @@ To run multiple dashboards simultaneously (e.g., for testing with different Syft
 ```bash
 # Terminal 1 - Instance 1
 just dev "/path/to/client1.config.json"
-# → Backend: :8001, Frontend: :3000
+# → Frontend: :3000, Backend: :8000
 
 # Terminal 2 - Instance 2
 just dev "/path/to/client2.config.json"
-# → Backend: :8002, Frontend: :3001 (auto-incremented)
+# → Frontend: :3001, Backend: :8001 (auto-incremented)
 ```
 
-Each instance automatically gets its own ports. The frontend determines the backend port at runtime using the formula: `backend_port = 8001 + (frontend_port - 3000)`.
+Each instance automatically gets its own ports. The backend port is always calculated as: `backend_port = frontend_port + 5000`. This works both for:
+- `just dev` instances (uses `NEXT_PUBLIC_API_URL` environment variable)
+- Manually opened browser tabs (auto-calculates from port in URL)
 
 **Debug**: Check API configuration in browser console:
 ```javascript

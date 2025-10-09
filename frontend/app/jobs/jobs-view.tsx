@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, Briefcase, Code2Icon } from "lucide-react"
+import { Check, X, Briefcase, Code2Icon, Play } from "lucide-react"
 import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
@@ -55,6 +55,10 @@ function JobsSection() {
   })
   const rejectMutation = useMutation({
     mutationFn: (jobUid: string) => jobsApi.rejectJob(jobUid),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+  })
+  const runMutation = useMutation({
+    mutationFn: (jobUid: string) => jobsApi.runJob(jobUid),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs"] }),
   })
 
@@ -144,6 +148,18 @@ function JobsSection() {
                                 Deny
                               </Button>
                             </>
+                          )}
+                          {job.status === "approved" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => runMutation.mutate(job.uid)}
+                              disabled={runMutation.isPending}
+                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                            >
+                              <Play className="mr-2 h-4 w-4" />
+                              {runMutation.isPending ? "Starting..." : "Run"}
+                            </Button>
                           )}
                           <ViewJobCodeButton job={job} />
                         </div>

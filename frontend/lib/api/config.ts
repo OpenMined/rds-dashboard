@@ -7,20 +7,22 @@ export function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL || "";
   }
 
-  // Check for stored override
+  // Check for stored override (for manual testing)
   const storedUrl = sessionStorage.getItem('api_base_url');
   if (storedUrl) {
     return storedUrl;
   }
 
-  // Calculate from frontend port in development
-  if (process.env.NODE_ENV === 'development') {
-    const frontendPort = parseInt(window.location.port || '3000');
-    const backendPort = 8001 + (frontendPort - 3000);
-    return `http://localhost:${backendPort}`;
+  // Use environment variable set by `just dev` (preferred)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || "";
+  // Fallback: calculate from frontend port using fixed relationship
+  // Backend port is always frontend port + 5000
+  const frontendPort = parseInt(window.location.port || '3000');
+  const backendPort = frontendPort + 5000;
+  return `http://localhost:${backendPort}`;
 }
 
 export function setApiBaseUrl(url: string): void {
@@ -40,12 +42,10 @@ export function resetApiBaseUrl(): void {
 export function logApiConfig(): void {
   if (typeof window !== 'undefined') {
     const current = getApiBaseUrl();
-    const frontendPort = window.location.port || '3000';
     const stored = sessionStorage.getItem('api_base_url');
 
     console.log('=== API Configuration ===');
     console.log(`Frontend URL: ${window.location.origin}`);
-    console.log(`Frontend Port: ${frontendPort}`);
     console.log(`Current API URL: ${current}`);
     console.log(`Stored Override: ${stored || 'none'}`);
     console.log(`Environment Variable: ${process.env.NEXT_PUBLIC_API_URL || 'not set'}`);

@@ -72,3 +72,19 @@ async def open_job_code(
     service = JobService(rds_client)
     await service.open_job_code(job_uid)
     return {"message": f"Opened code directory for job {job_uid}"}
+
+
+@router.post(
+    "/run/{job_uid}",
+    summary="Run an approved job",
+    description="Execute an approved job on private data in the background",
+    status_code=status.HTTP_200_OK,
+)
+async def run_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Run an approved job on private data."""
+    service = JobService(rds_client)
+    await service.run(job_uid)
+    return JSONResponse(content={"message": f"Job {job_uid} started."}, status_code=200)

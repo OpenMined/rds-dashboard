@@ -17,7 +17,7 @@ class JobService:
     async def list_jobs(self) -> ListJobsResponse:
         """List all jobs in the system."""
         try:
-            jobs = self.rds_client.jobs.get_all()
+            jobs = self.rds_client.job.get_all()
             return ListJobsResponse(jobs=jobs)
         except Exception as e:
             logger.error(f"Error listing jobs: {e}")
@@ -26,7 +26,7 @@ class JobService:
     async def open_job_code(self, job_uid: str) -> None:
         """Open the job code directory in the file browser."""
         try:
-            job = self.rds_client.jobs.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=job_uid)
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
@@ -43,13 +43,13 @@ class JobService:
     async def approve(self, job_uid: str):
         """Approve a job request by its UID."""
         try:
-            job = self.rds_client.jobs.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=job_uid)
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
                 )
 
-            self.rds_client.jobs.approve(job)
+            self.rds_client.job.approve(job)
             logger.info(f"Job {job_uid} approved.")
         except HTTPException:
             raise
@@ -60,16 +60,38 @@ class JobService:
     async def reject(self, job_uid: str):
         """Reject a job request by its UID."""
         try:
-            job = self.rds_client.jobs.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=job_uid)
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
                 )
 
-            self.rds_client.jobs.reject(job)
+            self.rds_client.job.reject(job)
             logger.info(f"Job {job_uid} rejected.")
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Error rejecting job: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def run(self, job_uid: str) -> None:
+        """Run an approved job on private data."""
+        try:
+            job = self.rds_client.job.get(uid=job_uid)
+            if not job:
+                raise HTTPException(
+                    status_code=404, detail=f"Job with UID '{job_uid}' not found"
+                )
+
+            # Run job in non-blocking mode (background)
+            self.rds_client.run_private(
+                job=job,
+                display_type="text",
+                blocking=True,  # Run in background
+            )
+            logger.info(f"Job {job_uid} started in background.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error running job: {e}")
             raise HTTPException(status_code=500, detail=str(e))
