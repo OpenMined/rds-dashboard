@@ -13,6 +13,7 @@ import { Check, X, Briefcase, Code2Icon } from "lucide-react"
 import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
+import { QUERY_CONFIG } from "@/lib/constants"
 import { useQuery } from "@tanstack/react-query"
 import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -43,6 +44,8 @@ function JobsSection() {
       const result = await apiService.getJobs()
       return result
     },
+    refetchInterval: QUERY_CONFIG.REFETCH_INTERVAL,
+    refetchOnWindowFocus: QUERY_CONFIG.REFETCH_ON_WINDOW_FOCUS,
   })
   const queryClient = useQueryClient()
 

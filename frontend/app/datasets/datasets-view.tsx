@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { datasetsApi } from "@/lib/api/datasets"
 import type { Dataset } from "@/lib/api/types"
+import { QUERY_CONFIG } from "@/lib/constants"
 import { useQuery } from "@tanstack/react-query"
 import { Database } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -18,6 +19,8 @@ export function DatasetsView() {
   const loadDatasetsQuery = useQuery({
     queryKey: ["datasets"],
     queryFn: () => datasetsApi.getDatasets(),
+    refetchInterval: QUERY_CONFIG.REFETCH_INTERVAL,
+    refetchOnWindowFocus: QUERY_CONFIG.REFETCH_ON_WINDOW_FOCUS,
   })
 
   const { isPending, data } = loadDatasetsQuery
