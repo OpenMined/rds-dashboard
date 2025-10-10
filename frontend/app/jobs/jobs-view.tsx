@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, Briefcase, Code2Icon, Play } from "lucide-react"
+import { Check, X, Briefcase, Code2Icon, Play, Trash2, Info } from "lucide-react"
 import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
@@ -19,6 +19,7 @@ import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-ca
 import { Skeleton } from "@/components/ui/skeleton"
 import { JobStatusBadge } from "./components/job-status-badge"
 import { JobLogsDialog } from "./components/job-logs-dialog"
+import { JobDetailsDialog } from "./components/job-details-dialog"
 
 export function JobsView() {
   return (
@@ -60,6 +61,10 @@ function JobsSection() {
   })
   const runMutation = useMutation({
     mutationFn: (jobUid: string) => jobsApi.runJob(jobUid),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (jobUid: string) => jobsApi.deleteJob(jobUid),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs"] }),
   })
 
@@ -126,9 +131,21 @@ function JobsSection() {
                     statusJobs.map((job) => (
                       <Card key={job.uid} className="hover:shadow-md transition-shadow">
                         <CardHeader className="pb-1 px-2 pt-2">
-                          <CardTitle className="text-xs truncate font-semibold">
-                            {job.projectName}
-                          </CardTitle>
+                          <div className="flex items-center justify-between gap-1">
+                            <CardTitle className="text-xs truncate font-semibold flex-1">
+                              {job.projectName}
+                            </CardTitle>
+                            <JobDetailsDialog job={job}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 w-5 p-0 hover:bg-muted"
+                                title="Show Details"
+                              >
+                                <Info className="h-3 w-3" />
+                              </Button>
+                            </JobDetailsDialog>
+                          </div>
                           <CardDescription className="text-[10px] line-clamp-1 mt-0.5">
                             {job.description}
                           </CardDescription>
@@ -177,6 +194,16 @@ function JobsSection() {
                               <JobLogsDialog job={job} />
                             )}
                             <ViewJobCodeButton job={job} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(job.uid)}
+                              disabled={deleteMutation.isPending}
+                              className="border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/30 w-full h-7 text-xs"
+                            >
+                              <Trash2 className="mr-1 h-3 w-3" />
+                              Delete
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>

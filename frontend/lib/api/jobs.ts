@@ -6,6 +6,9 @@ export interface JobLogs {
 }
 
 export const jobsApi = {
+  getJob: (jobUid: string) => {
+    return apiClient.get<any>(`/api/v1/jobs/${jobUid}`)
+  },
   openJobCode: ({ jobUid }: { jobUid: string }) => {
     return apiClient.get<{}>(`/api/v1/jobs/open-code/${jobUid}`)
   },
@@ -20,5 +23,8 @@ export const jobsApi = {
   },
   getJobLogs: (jobUid: string) => {
     return apiClient.get<JobLogs>(`/api/v1/jobs/logs/${jobUid}`)
+  },
+  deleteJob: (jobUid: string) => {
+    return apiClient.delete<{}>(`/api/v1/jobs/${jobUid}`)
   },
 }

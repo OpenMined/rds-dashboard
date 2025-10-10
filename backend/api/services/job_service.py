@@ -1,4 +1,5 @@
 import webbrowser
+from uuid import UUID
 
 from fastapi import HTTPException
 from loguru import logger
@@ -21,6 +22,21 @@ class JobService:
             return ListJobsResponse(jobs=jobs)
         except Exception as e:
             logger.error(f"Error listing jobs: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_job(self, job_uid: str):
+        """Get detailed metadata for a specific job."""
+        try:
+            job = self.rds_client.job.get(uid=UUID(job_uid))
+            if not job:
+                raise HTTPException(
+                    status_code=404, detail=f"Job with UID '{job_uid}' not found"
+                )
+            return job
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting job {job_uid}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def open_job_code(self, job_uid: str) -> None:
@@ -94,4 +110,34 @@ class JobService:
             raise
         except Exception as e:
             logger.error(f"Error running job: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def get_logs(self, job_uid: str) -> dict[str, str]:
+        """Get stdout and stderr logs for a job."""
+        try:
+            return self.rds_client.job.get_logs(UUID(job_uid))
+        except ValueError as e:
+            # Logs don't exist yet (job not executed) or invalid UUID
+            logger.warning(f"Logs not found for job {job_uid}: {e}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Logs not available for job {job_uid}. Job may not have been executed yet.",
+            )
+        except Exception as e:
+            logger.error(f"Error getting logs for job {job_uid}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    async def delete(self, job_uid: str) -> None:
+        """Delete a job by its UID."""
+        try:
+            success = self.rds_client.job.delete(UUID(job_uid))
+            if not success:
+                raise HTTPException(
+                    status_code=404, detail=f"Job with UID '{job_uid}' not found"
+                )
+            logger.info(f"Job {job_uid} deleted.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error deleting job {job_uid}: {e}")
             raise HTTPException(status_code=500, detail=str(e))

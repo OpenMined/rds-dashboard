@@ -88,3 +88,49 @@ async def run_job(
     service = JobService(rds_client)
     await service.run(job_uid)
     return JSONResponse(content={"message": f"Job {job_uid} started."}, status_code=200)
+
+
+@router.delete(
+    "/{job_uid}",
+    summary="Delete a job",
+    description="Delete a job by its UID",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Delete a job."""
+    service = JobService(rds_client)
+    await service.delete(job_uid)
+    return JSONResponse(content={"message": f"Job {job_uid} deleted."}, status_code=200)
+
+
+@router.get(
+    "/logs/{job_uid}",
+    summary="Get job logs",
+    description="Retrieve stdout and stderr logs for a specific job",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job_logs(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get stdout and stderr logs for a job."""
+    service = JobService(rds_client)
+    return await service.get_logs(job_uid)
+
+
+@router.get(
+    "/{job_uid}",
+    summary="Get job details",
+    description="Get detailed metadata for a specific job by its UID",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get detailed job metadata."""
+    service = JobService(rds_client)
+    return await service.get_job(job_uid)
