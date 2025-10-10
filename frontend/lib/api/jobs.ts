@@ -1,5 +1,10 @@
 import { apiClient } from "./api-client"
 
+export interface JobLogs {
+  stdout: string
+  stderr: string
+}
+
 export const jobsApi = {
   openJobCode: ({ jobUid }: { jobUid: string }) => {
     return apiClient.get<{}>(`/api/v1/jobs/open-code/${jobUid}`)
@@ -12,5 +17,8 @@ export const jobsApi = {
   },
   runJob: (jobUid: string) => {
     return apiClient.post<{}>(`/api/v1/jobs/run/${jobUid}`, {})
+  },
+  getJobLogs: (jobUid: string) => {
+    return apiClient.get<JobLogs>(`/api/v1/jobs/logs/${jobUid}`)
   },
 }

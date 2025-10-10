@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query"
 import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { JobStatusBadge } from "./components/job-status-badge"
+import { JobLogsDialog } from "./components/job-logs-dialog"
 
 export function JobsView() {
   return (
@@ -90,83 +91,97 @@ function JobsSection() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {(["running", "pending", "approved", "finished", "failed", "denied"] as const).map((status) => {
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {(["pending", "approved", "denied", "running", "finished", "failed"] as const).map((status) => {
             const statusJobs = getJobsByStatus(data?.jobs ?? [], status)
-            if (statusJobs.length === 0) return null
+
+            const columnStyles = {
+              pending: "border-yellow-200 dark:border-yellow-900",
+              approved: "border-emerald-200 dark:border-emerald-900",
+              denied: "border-red-200 dark:border-red-900",
+              running: "border-blue-200 dark:border-blue-900",
+              finished: "border-green-200 dark:border-green-900",
+              failed: "border-orange-200 dark:border-orange-900",
+            }
 
             return (
-              <div key={status} className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <h2 className="text-xl font-semibold capitalize">
-                    {status} Jobs
-                  </h2>
-                  <Badge variant="outline">{statusJobs.length}</Badge>
+              <div key={status} className="flex flex-col flex-shrink-0 w-56">
+                <div className={`border-t-4 rounded-t-lg ${columnStyles[status]} bg-card p-2`}>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-semibold capitalize">
+                      {status}
+                    </h2>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {statusJobs.length}
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {statusJobs.map((job) => (
-                    <Card key={job.uid}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <CardTitle className="text-base truncate">
-                              {job.projectName}
-                            </CardTitle>
-                            <CardDescription className="text-xs line-clamp-1">
-                              {job.description}
-                            </CardDescription>
+                <div className="flex-1 space-y-2 mt-2 min-h-[200px] max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                  {statusJobs.length === 0 ? (
+                    <div className="text-center text-muted-foreground text-xs py-8">
+                      No jobs
+                    </div>
+                  ) : (
+                    statusJobs.map((job) => (
+                      <Card key={job.uid} className="hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-1 px-2 pt-2">
+                          <CardTitle className="text-xs truncate font-semibold">
+                            {job.projectName}
+                          </CardTitle>
+                          <CardDescription className="text-[10px] line-clamp-1 mt-0.5">
+                            {job.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-1.5 px-2 pb-2">
+                          <p className="text-muted-foreground text-[10px]">
+                            {timeAgo(job.requestedTime.toISOString())} by{" "}
+                            <span className="text-foreground/70 font-medium">{job.requesterEmail}</span>
+                          </p>
+                          <div className="flex flex-col gap-1">
+                            {job.status === "pending" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => approveMutation.mutate(job.uid)}
+                                  className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30 w-full h-7 text-xs"
+                                >
+                                  <Check className="mr-1 h-3 w-3" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => rejectMutation.mutate(job.uid)}
+                                  className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 w-full h-7 text-xs"
+                                >
+                                  <X className="mr-1 h-3 w-3" />
+                                  Deny
+                                </Button>
+                              </>
+                            )}
+                            {job.status === "approved" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => runMutation.mutate(job.uid)}
+                                disabled={runMutation.isPending}
+                                className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30 w-full h-7 text-xs"
+                              >
+                                <Play className="mr-1 h-3 w-3" />
+                                {runMutation.isPending ? "Starting..." : "Run"}
+                              </Button>
+                            )}
+                            {(job.status === "running" || job.status === "finished" || job.status === "failed") && (
+                              <JobLogsDialog job={job} />
+                            )}
+                            <ViewJobCodeButton job={job} />
                           </div>
-                          <JobStatusBadge jobStatus={job.status} />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <p className="text-muted-foreground text-xs">
-                          {timeAgo(job.requestedTime.toISOString())} by{" "}
-                          <strong className="text-foreground/70 font-semibold">
-                            {job.requesterEmail}
-                          </strong>
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {job.status === "pending" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => approveMutation.mutate(job.uid)}
-                                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30 flex-1"
-                              >
-                                <Check className="mr-2 h-4 w-4" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => rejectMutation.mutate(job.uid)}
-                                className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 flex-1"
-                              >
-                                <X className="mr-2 h-4 w-4" />
-                                Deny
-                              </Button>
-                            </>
-                          )}
-                          {job.status === "approved" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => runMutation.mutate(job.uid)}
-                              disabled={runMutation.isPending}
-                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30 flex-1"
-                            >
-                              <Play className="mr-2 h-4 w-4" />
-                              {runMutation.isPending ? "Starting..." : "Run"}
-                            </Button>
-                          )}
-                          <ViewJobCodeButton job={job} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </div>
             )
@@ -208,8 +223,9 @@ function ViewJobCodeButton({ job }: { job: Job }) {
       variant="outline"
       size="sm"
       onClick={() => jobsApi.openJobCode({ jobUid: job.uid })}
+      className="w-full h-7 text-xs"
     >
-      <Code2Icon />
+      <Code2Icon className="mr-1 h-3 w-3" />
       View Code
     </Button>
   )
