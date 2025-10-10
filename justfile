@@ -74,7 +74,7 @@ clean:
 # ---------------------------------------------------------------------------------------------------------------------
 
 [group('dev')]
-dev config_path="" port="8001" frontend_port="3000":
+dev config_path="" port="8000" frontend_port="3000":
     #!/bin/bash
     set -euo pipefail
 
@@ -110,8 +110,8 @@ dev config_path="" port="8001" frontend_port="3000":
 
     # concurrently run the server and frontend
     bunx concurrently --names "server,frontend" --prefix-colors "blue,green" \
-        "${CONFIG_FLAG} uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
-        "NEXT_PUBLIC_API_URL=http://localhost:${API_PORT} bun run --cwd frontend dev -- -p ${FRONTEND_PORT}"
+        "${CONFIG_FLAG} DEBUG=true uv run uvicorn backend.main:app --reload --port ${API_PORT}" \
+        "NEXT_PUBLIC_DEBUG=true bun run --cwd frontend dev -- -p ${FRONTEND_PORT}"
 
 [group('server')]
 prod config_path="":
@@ -125,7 +125,7 @@ prod config_path="":
     fi
 
     # build the frontend
-    bun run --cwd frontend build
+    NEXT_PUBLIC_DEBUG=false bun run --cwd frontend build
 
     # Run in production mode (debug=false to enable static file serving)
     DEBUG=false uv run uvicorn backend.main:app

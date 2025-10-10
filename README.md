@@ -47,9 +47,7 @@ just dev "/path/to/client2.config.json"
 # → Frontend: :3001, Backend: :8001 (auto-incremented)
 ```
 
-Each instance automatically gets its own ports. The backend port is always calculated as: `backend_port = frontend_port + 5000`. This works both for:
-- `just dev` instances (uses `NEXT_PUBLIC_API_URL` environment variable)
-- Manually opened browser tabs (auto-calculates from port in URL)
+Each instance automatically gets its own ports. The backend port is always calculated as: `backend_port = frontend_port + 5000`. The frontend auto-detects the correct API URL based on the `DEBUG` environment variable (same as the backend).
 
 **Debug**: Check API configuration in browser console:
 ```javascript

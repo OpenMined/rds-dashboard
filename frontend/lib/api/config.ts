@@ -4,7 +4,7 @@
 
 export function getApiBaseUrl(): string {
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || "";
+    return "";
   }
 
   // Check for stored override (for manual testing)
@@ -13,16 +13,20 @@ export function getApiBaseUrl(): string {
     return storedUrl;
   }
 
-  // Use environment variable set by `just dev` (preferred)
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
+  // Auto-detect based on environment
+  const isDevMode = process.env.NEXT_PUBLIC_DEBUG === 'true';
+  const currentPort = parseInt(window.location.port || '80');
 
-  // Fallback: calculate from frontend port using fixed relationship
-  // Backend port is always frontend port + 5000
-  const frontendPort = parseInt(window.location.port || '3000');
-  const backendPort = frontendPort + 5000;
-  return `http://localhost:${backendPort}`;
+  // Dev mode: Frontend on dev server, backend is frontend_port + 5000
+  // Production: Backend serves frontend on same port (typically 8000+)
+  if (isDevMode) {
+    // Dev mode: calculate backend port
+    const backendPort = currentPort + 5000;
+    return `http://localhost:${backendPort}`;
+  } else {
+    // Production mode: backend on same port as frontend
+    return window.location.origin;
+  }
 }
 
 export function setApiBaseUrl(url: string): void {
@@ -43,12 +47,13 @@ export function logApiConfig(): void {
   if (typeof window !== 'undefined') {
     const current = getApiBaseUrl();
     const stored = sessionStorage.getItem('api_base_url');
+    const mode = process.env.NEXT_PUBLIC_DEBUG === 'true' ? 'dev' : 'production';
 
     console.log('=== API Configuration ===');
+    console.log(`Mode: ${mode}`);
     console.log(`Frontend URL: ${window.location.origin}`);
     console.log(`Current API URL: ${current}`);
     console.log(`Stored Override: ${stored || 'none'}`);
-    console.log(`Environment Variable: ${process.env.NEXT_PUBLIC_API_URL || 'not set'}`);
     console.log('========================');
   }
 }
