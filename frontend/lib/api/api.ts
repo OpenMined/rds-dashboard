@@ -7,7 +7,7 @@ export interface Job {
   description: string
   requestedTime: Date
   requesterEmail: string
-  status: "pending" | "approved" | "denied"
+  status: "pending" | "approved" | "denied" | "running" | "finished" | "failed"
 }
 
 interface JobResponse {
@@ -25,6 +25,7 @@ interface JobResponse {
     | "pending_code_review"
     | "job_run_failed"
     | "job_run_finished"
+    | "job_in_progress"
     | "approved"
     | "shared"
     | "rejected"
@@ -37,10 +38,11 @@ interface JobResponse {
 
 const jobStatusMap = {
   pending_code_review: "pending",
-  job_run_failed: "pending",
-  job_run_finished: "approved",
+  job_in_progress: "running",
+  job_run_failed: "failed",
+  job_run_finished: "finished",
   approved: "approved",
-  shared: "approved",
+  shared: "finished",
   rejected: "denied",
 } as const
 

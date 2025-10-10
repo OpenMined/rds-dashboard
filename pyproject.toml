@@ -15,8 +15,8 @@ dependencies = [
     "uvicorn>=0.37.0",
 ]
 
-# [tool.uv.sources]
-# syft-rds = { path = "../syft-rds" }  # for development
+[tool.uv.sources]
+syft-rds = { path = "../syft-rds" }  # for development
 
 [dependency-groups]
 dev = []

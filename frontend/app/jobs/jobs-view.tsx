@@ -90,50 +90,51 @@ function JobsSection() {
           </div>
         </div>
       ) : (
-        (["pending", "approved", "denied"] as const).map((status) => {
-          const statusJobs = getJobsByStatus(data?.jobs ?? [], status)
-          if (statusJobs.length === 0) return null
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {(["running", "pending", "approved", "finished", "failed", "denied"] as const).map((status) => {
+            const statusJobs = getJobsByStatus(data?.jobs ?? [], status)
+            if (statusJobs.length === 0) return null
 
-          return (
-            <div key={status} className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-semibold capitalize">
-                  {status} Jobs
-                </h2>
-                <Badge variant="outline">{statusJobs.length}</Badge>
-              </div>
+            return (
+              <div key={status} className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-xl font-semibold capitalize">
+                    {status} Jobs
+                  </h2>
+                  <Badge variant="outline">{statusJobs.length}</Badge>
+                </div>
 
-              <div className="grid gap-4">
-                {statusJobs.map((job) => (
-                  <Card key={job.uid}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="flex items-center gap-4 text-lg">
-                            {job.projectName}
-                          </CardTitle>
-                          <CardDescription>{job.description}</CardDescription>
+                <div className="space-y-3">
+                  {statusJobs.map((job) => (
+                    <Card key={job.uid}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <CardTitle className="text-base truncate">
+                              {job.projectName}
+                            </CardTitle>
+                            <CardDescription className="text-xs line-clamp-1">
+                              {job.description}
+                            </CardDescription>
+                          </div>
+                          <JobStatusBadge jobStatus={job.status} />
                         </div>
-                        <JobStatusBadge jobStatus={job.status} />
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-end justify-between">
-                        <p className="text-muted-foreground text-sm">
-                          Requested {timeAgo(job.requestedTime.toISOString())}{" "}
-                          by{" "}
-                          <strong className="text-foreground/70 font-semibold tracking-wide">
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-muted-foreground text-xs">
+                          {timeAgo(job.requestedTime.toISOString())} by{" "}
+                          <strong className="text-foreground/70 font-semibold">
                             {job.requesterEmail}
                           </strong>
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {job.status === "pending" && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => approveMutation.mutate(job.uid)}
-                                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30 flex-1"
                               >
                                 <Check className="mr-2 h-4 w-4" />
                                 Approve
@@ -142,7 +143,7 @@ function JobsSection() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => rejectMutation.mutate(job.uid)}
-                                className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
+                                className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 flex-1"
                               >
                                 <X className="mr-2 h-4 w-4" />
                                 Deny
@@ -155,7 +156,7 @@ function JobsSection() {
                               size="sm"
                               onClick={() => runMutation.mutate(job.uid)}
                               disabled={runMutation.isPending}
-                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30 flex-1"
                             >
                               <Play className="mr-2 h-4 w-4" />
                               {runMutation.isPending ? "Starting..." : "Run"}
@@ -163,14 +164,14 @@ function JobsSection() {
                           )}
                           <ViewJobCodeButton job={job} />
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          )
-        })
+            )
+          })}
+        </div>
       )}
     </>
   )

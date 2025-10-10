@@ -87,7 +87,7 @@ class JobService:
             self.rds_client.run_private(
                 job=job,
                 display_type="text",
-                blocking=True,  # Run in background
+                blocking=False,  # Run in background
             )
             logger.info(f"Job {job_uid} started in background.")
         except HTTPException:
