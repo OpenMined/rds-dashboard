@@ -1,10 +1,11 @@
 from typing import Dict
 from fastapi import APIRouter
-from .routers import datasets, jobs, trusted_datasites
+from .routers import account, datasets, jobs, trusted_datasites
 
 
 v1_router = APIRouter(prefix="/v1")
 
+v1_router.include_router(account.router)
 v1_router.include_router(datasets.router)
 v1_router.include_router(jobs.router)
 v1_router.include_router(trusted_datasites.router)

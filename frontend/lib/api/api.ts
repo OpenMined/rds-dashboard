@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./config"
+import type { AccountInfo } from "./types"
 
 export interface Job {
   uid: string
@@ -135,5 +136,17 @@ export const apiService = {
     }
 
     return response
+  },
+
+  async getAccountInfo(): Promise<AccountInfo> {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/account`)
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || "Failed to fetch account information")
+    }
+
+    const data: AccountInfo = await response.json()
+    return data
   },
 }

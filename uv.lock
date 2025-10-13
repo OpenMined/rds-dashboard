@@ -841,7 +841,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "syft-core", specifier = ">=0.2.3" },
-    { name = "syft-rds", directory = "../syft-rds" },
+    { name = "syft-rds", editable = "../syft-rds" },
     { name = "uvicorn", specifier = ">=0.37.0" },
 ]
 
@@ -980,7 +980,7 @@ wheels = [
 [[package]]
 name = "syft-rds"
 version = "0.4.1"
-source = { directory = "../syft-rds" }
+source = { editable = "../syft-rds" }
 dependencies = [
     { name = "ipython" },
     { name = "jinja2" },
