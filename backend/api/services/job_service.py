@@ -102,7 +102,6 @@ class JobService:
             # Run job in non-blocking mode (background)
             self.rds_client.run_private(
                 job=job,
-                display_type="text",
                 blocking=False,  # Run in background
             )
             logger.info(f"Job {job_uid} started in background.")

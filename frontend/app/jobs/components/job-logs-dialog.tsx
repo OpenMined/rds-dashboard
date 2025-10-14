@@ -17,6 +17,7 @@ import { FileTextIcon, RefreshCwIcon } from "lucide-react"
 import { jobsApi } from "@/lib/api/jobs"
 import type { Job } from "@/lib/api/api"
 import { QUERY_CONFIG } from "@/lib/constants"
+import { ColorizedLogs } from "./colorized-logs"
 
 export function JobLogsDialog({ job }: { job: Job }) {
   const [open, setOpen] = useState(false)
@@ -67,15 +68,23 @@ export function JobLogsDialog({ job }: { job: Job }) {
           <TabsContent value="stdout" className="mt-4">
             <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4">
               <pre className="text-sm text-slate-50 font-mono whitespace-pre-wrap">
-                {logs?.stdout || "No stdout logs available"}
+                {logs?.stdout ? (
+                  <ColorizedLogs content={logs.stdout} />
+                ) : (
+                  "No stdout logs available"
+                )}
               </pre>
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="stderr" className="mt-4">
             <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4">
-              <pre className="text-sm text-red-400 font-mono whitespace-pre-wrap">
-                {logs?.stderr || "No stderr logs available"}
+              <pre className="text-sm text-slate-50 font-mono whitespace-pre-wrap">
+                {logs?.stderr ? (
+                  <ColorizedLogs content={logs.stderr} />
+                ) : (
+                  "No stderr logs available"
+                )}
               </pre>
             </ScrollArea>
           </TabsContent>
