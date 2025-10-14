@@ -26,6 +26,8 @@ export function JobLogsDialog({ job }: { job: Job }) {
     queryFn: () => jobsApi.getJobLogs(job.uid),
     enabled: open,
     refetchInterval: job.status === "running" ? QUERY_CONFIG.REFETCH_INTERVAL : false,
+    staleTime: 0,
+    gcTime: 0,
   })
 
   return (
@@ -57,9 +59,9 @@ export function JobLogsDialog({ job }: { job: Job }) {
         </DialogHeader>
 
         <Tabs defaultValue="stdout" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="stdout">Standard Output</TabsTrigger>
-            <TabsTrigger value="stderr">Standard Error</TabsTrigger>
+          <TabsList className="!grid w-full grid-cols-2">
+            <TabsTrigger value="stdout" className="!flex-1">Standard Output</TabsTrigger>
+            <TabsTrigger value="stderr" className="!flex-1">Standard Error</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stdout" className="mt-4">
