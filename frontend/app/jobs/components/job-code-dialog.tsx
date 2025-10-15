@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   Dialog,
@@ -73,12 +73,14 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
   const fileTree = buildFileTree(fileList)
 
   // Set the first file as selected if nothing is selected
-  if (fileList.length > 0 && !selectedFile && !isLoading) {
-    setSelectedFile(fileList[0])
-  }
+  useEffect(() => {
+    if (fileList.length > 0 && !selectedFile && !isLoading) {
+      setSelectedFile(fileList[0])
+    }
+  }, [fileList.length, selectedFile, isLoading])
 
   const toggleFolder = (path: string) => {
-    setExpandedFolders(prev => {
+    setExpandedFolders((prev: Set<string>) => {
       const next = new Set(prev)
       if (next.has(path)) {
         next.delete(path)
@@ -89,32 +91,6 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
     })
   }
 
-  const getLanguageFromExtension = (filename: string): string => {
-    const ext = filename.split('.').pop()?.toLowerCase()
-    switch (ext) {
-      case 'py':
-        return 'python'
-      case 'yaml':
-      case 'yml':
-        return 'yaml'
-      case 'json':
-        return 'json'
-      case 'md':
-        return 'markdown'
-      case 'toml':
-        return 'toml'
-      case 'lock':
-        return 'text'
-      case 'txt':
-        return 'text'
-      case 'ini':
-      case 'cfg':
-      case 'conf':
-        return 'ini'
-      default:
-        return 'text'
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -126,7 +102,7 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[85vh]">
+      <DialogContent className="max-w-[90vw] max-h-[85vh]">
         <DialogHeader>
           <DialogTitle>Job Code: {job.projectName}</DialogTitle>
           <DialogDescription>
@@ -134,9 +110,9 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-4 h-[calc(85vh-120px)]">
+        <div className="flex gap-4 h-[calc(85vh-120px)] overflow-hidden">
           {/* File Tree Sidebar */}
-          <div className="w-64 border-r pr-4">
+          <div className="w-64 border-r pr-4 flex-shrink-0">
             <div className="text-xs font-semibold mb-2 text-muted-foreground flex items-center gap-1">
               <FolderIcon className="h-3 w-3" />
               Files
@@ -160,19 +136,27 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
           </div>
 
           {/* Code Display */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             {selectedFile && files[selectedFile] ? (
-              <div className="h-full flex flex-col">
+              <div className="h-full flex flex-col overflow-hidden">
                 <div className="text-xs font-medium mb-2 text-muted-foreground">
                   {selectedFile}
                 </div>
-                <ScrollArea className="flex-1 rounded-md border bg-slate-950 p-4">
-                  <pre className="text-xs text-slate-50 font-mono whitespace-pre-wrap break-all">
-                    <code className={`language-${getLanguageFromExtension(selectedFile)}`}>
-                      {files[selectedFile]}
-                    </code>
-                  </pre>
-                </ScrollArea>
+                <div className="flex-1 rounded-md border bg-slate-950 overflow-hidden">
+                  <ScrollArea className="h-full w-full">
+                    <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                      <pre
+                        className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
+                        style={{
+                          overflowWrap: 'anywhere',
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        {files[selectedFile]}
+                      </pre>
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground text-sm">

@@ -35,7 +35,7 @@ export function JobDetailsDialog({ job, children }: JobDetailsDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Job Details</DialogTitle>
           <DialogDescription>
@@ -46,7 +46,7 @@ export function JobDetailsDialog({ job, children }: JobDetailsDialogProps) {
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
         ) : (
-          <ScrollArea className="h-[500px] w-full rounded-md border p-4">
+          <ScrollArea className="max-h-[calc(80vh-180px)] w-full rounded-md border p-4 overflow-auto">
             <div className="space-y-4">
               <DetailRow label="Job Name" value={jobDetails?.name || "N/A"} />
               <DetailRow label="Description" value={jobDetails?.description || "N/A"} />

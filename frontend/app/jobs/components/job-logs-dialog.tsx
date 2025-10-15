@@ -39,7 +39,7 @@ export function JobLogsDialog({ job }: { job: Job }) {
           View Logs
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-[90vw] max-h-[80vh]">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -59,34 +59,54 @@ export function JobLogsDialog({ job }: { job: Job }) {
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="stdout" className="w-full">
+        <Tabs defaultValue="stdout" className="w-full overflow-hidden">
           <TabsList className="!grid w-full grid-cols-2">
             <TabsTrigger value="stdout" className="!flex-1">Standard Output</TabsTrigger>
             <TabsTrigger value="stderr" className="!flex-1">Standard Error</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stdout" className="mt-4">
-            <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4">
-              <pre className="text-sm text-slate-50 font-mono whitespace-pre-wrap">
-                {logs?.stdout ? (
-                  <ColorizedLogs content={logs.stdout} />
-                ) : (
-                  "No stdout logs available"
-                )}
-              </pre>
-            </ScrollArea>
+            <div className="h-[500px] w-full rounded-md border bg-slate-950 overflow-hidden">
+              <ScrollArea className="h-full w-full">
+                <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                  <pre
+                    className="text-sm text-slate-50 font-mono whitespace-pre-wrap"
+                    style={{
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word'
+                    }}
+                  >
+                    {logs?.stdout ? (
+                      <ColorizedLogs content={logs.stdout} />
+                    ) : (
+                      "No stdout logs available"
+                    )}
+                  </pre>
+                </div>
+              </ScrollArea>
+            </div>
           </TabsContent>
 
           <TabsContent value="stderr" className="mt-4">
-            <ScrollArea className="h-[500px] w-full rounded-md border bg-slate-950 p-4">
-              <pre className="text-sm text-slate-50 font-mono whitespace-pre-wrap">
-                {logs?.stderr ? (
-                  <ColorizedLogs content={logs.stderr} />
-                ) : (
-                  "No stderr logs available"
-                )}
-              </pre>
-            </ScrollArea>
+            <div className="h-[500px] w-full rounded-md border bg-slate-950 overflow-hidden">
+              <ScrollArea className="h-full w-full">
+                <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                  <pre
+                    className="text-sm text-slate-50 font-mono whitespace-pre-wrap"
+                    style={{
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word'
+                    }}
+                  >
+                    {logs?.stderr ? (
+                      <ColorizedLogs content={logs.stderr} />
+                    ) : (
+                      "No stderr logs available"
+                    )}
+                  </pre>
+                </div>
+              </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
