@@ -60,18 +60,18 @@ async def reject_job(
 
 
 @router.get(
-    "/open-code/{job_uid}",
-    summary="Open job code in browser",
-    description="Open the code directory for a specific job in the default file browser",
+    "/code/{job_uid}",
+    summary="Get job code",
+    description="Retrieve the code files for a specific job",
+    status_code=status.HTTP_200_OK,
 )
-async def open_job_code(
+async def get_job_code(
     job_uid: str,
     rds_client: RDSClient = Depends(get_rds_client),
 ):
-    """Open job code directory in the system file browser."""
+    """Get job code files and their contents."""
     service = JobService(rds_client)
-    await service.open_job_code(job_uid)
-    return {"message": f"Opened code directory for job {job_uid}"}
+    return await service.get_job_code(job_uid)
 
 
 @router.post(

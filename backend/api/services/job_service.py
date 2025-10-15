@@ -1,4 +1,4 @@
-import webbrowser
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -39,8 +39,8 @@ class JobService:
             logger.error(f"Error getting job {job_uid}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def open_job_code(self, job_uid: str) -> None:
-        """Open the job code directory in the file browser."""
+    async def get_job_code(self, job_uid: str) -> dict[str, dict[str, str]]:
+        """Get the job code files and their contents."""
         try:
             job = self.rds_client.job.get(uid=UUID(job_uid))
             if not job:
@@ -48,12 +48,68 @@ class JobService:
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
                 )
 
-            # Open the job's code directory
-            webbrowser.open(f"file://{job.user_code.local_dir}")
+            code_dir = Path(job.user_code.local_dir)
+            files = {}
+
+            if not code_dir.exists():
+                logger.warning(f"Code directory does not exist: {code_dir}")
+                return {"code_dir": str(code_dir), "files": {}}
+
+            # Directories and patterns to ignore
+            ignore_patterns = {
+                ".venv",
+                "venv",
+                "__pycache__",
+                ".git",
+                ".pytest_cache",
+                ".mypy_cache",
+                ".ruff_cache",
+                "node_modules",
+                ".tox",
+                ".eggs",
+                ".egg-info",
+                ".coverage",
+                "htmlcov",
+                "dist",
+                "build",
+                ".DS_Store",
+            }
+
+            def should_ignore(path: Path) -> bool:
+                """Check if path should be ignored."""
+                parts = path.parts
+                for part in parts:
+                    # Check against ignore patterns
+                    if part in ignore_patterns:
+                        return True
+                    # Check if it's an egg-info directory
+                    if part.endswith(".egg-info"):
+                        return True
+                return False
+
+            # Read all files (except ignored ones)
+            for file_path in code_dir.rglob("*"):
+                # Skip directories
+                if file_path.is_dir():
+                    continue
+
+                # Skip ignored paths
+                if should_ignore(file_path.relative_to(code_dir)):
+                    continue
+
+                relative_path = file_path.relative_to(code_dir)
+                try:
+                    # Try to read as text
+                    files[str(relative_path)] = file_path.read_text()
+                except Exception as e:
+                    # Skip binary files or unreadable files
+                    logger.debug(f"Skipping {file_path}: {e}")
+
+            return {"code_dir": str(code_dir), "files": files}
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error opening job code: {e}")
+            logger.error(f"Error getting job code: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def approve(self, job_uid: str):

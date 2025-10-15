@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, Briefcase, Code2Icon, Play, Trash2, Info } from "lucide-react"
+import { Check, X, Briefcase, Play, Trash2, Info } from "lucide-react"
 import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { JobStatusBadge } from "./components/job-status-badge"
 import { JobLogsDialog } from "./components/job-logs-dialog"
 import { JobDetailsDialog } from "./components/job-details-dialog"
+import { JobCodeDialog } from "./components/job-code-dialog"
 
 export function JobsView() {
   return (
@@ -193,7 +194,7 @@ function JobsSection() {
                             {(job.status === "running" || job.status === "finished" || job.status === "failed") && (
                               <JobLogsDialog job={job} />
                             )}
-                            <ViewJobCodeButton job={job} />
+                            <JobCodeDialog job={job} />
                             <Button
                               variant="outline"
                               size="sm"
@@ -241,19 +242,5 @@ function JobsLoadingSkeleton() {
         </Card>
       ))}
     </div>
-  )
-}
-
-function ViewJobCodeButton({ job }: { job: Job }) {
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => jobsApi.openJobCode({ jobUid: job.uid })}
-      className="w-full h-7 text-xs"
-    >
-      <Code2Icon className="mr-1 h-3 w-3" />
-      View Code
-    </Button>
   )
 }
