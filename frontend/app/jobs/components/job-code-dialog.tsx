@@ -16,6 +16,7 @@ import { Code2Icon, FileIcon, FolderIcon, ChevronRight, ChevronDown, CopyIcon, C
 import { jobsApi } from "@/lib/api/jobs"
 import type { Job } from "@/lib/api/api"
 import { cn } from "@/lib/utils"
+import { CodeHighlighter } from "./code-highlighter"
 
 interface TreeNode {
   name: string
@@ -159,15 +160,10 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
                   <ScrollArea className="h-full w-full">
                     <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                       {files[selectedFile] ? (
-                        <pre
-                          className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
-                          style={{
-                            overflowWrap: 'anywhere',
-                            wordBreak: 'break-word'
-                          }}
-                        >
-                          {files[selectedFile]}
-                        </pre>
+                        <CodeHighlighter
+                          code={files[selectedFile]}
+                          filePath={selectedFile}
+                        />
                       ) : (
                         <div className="text-muted-foreground text-xs italic">
                           This file is empty
@@ -186,9 +182,10 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
         </div>
 
         {codeData?.code_dir && (
-          <div className="flex items-start gap-2 text-xs text-muted-foreground mt-2">
-            <span className="flex-1 break-all">
-              <span className="font-medium">Code directory:</span> {codeData.code_dir}
+          <div className="flex items-start gap-2 text-xs mt-2">
+            <span className="text-muted-foreground font-medium">Code directory:</span>
+            <span className="flex-1 break-all text-blue-500 underline">
+              {codeData.code_dir}
             </span>
             <Button
               variant="ghost"
