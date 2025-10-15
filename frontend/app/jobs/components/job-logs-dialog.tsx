@@ -39,12 +39,14 @@ export function JobLogsDialog({ job }: { job: Job }) {
           View Logs
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent
+        className="!max-w-[50vw] !max-h-[90vh] !w-[50vw] !h-[90vh] p-5 !gap-0"
+      >
+        <DialogHeader className="!gap-1 !space-y-0 !mb-0">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle>Job Logs: {job.projectName}</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="!mb-0">
                 View stdout and stderr output from the job execution
               </DialogDescription>
             </div>
@@ -59,18 +61,18 @@ export function JobLogsDialog({ job }: { job: Job }) {
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="stdout" className="w-full overflow-hidden">
-          <TabsList className="!grid w-full grid-cols-2">
+        <Tabs defaultValue="stdout" className="w-full overflow-hidden !mt-0">
+          <TabsList className="!grid w-full grid-cols-2 !mt-0">
             <TabsTrigger value="stdout" className="!flex-1">Standard Output</TabsTrigger>
             <TabsTrigger value="stderr" className="!flex-1">Standard Error</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="stdout" className="mt-4">
-            <div className="h-[500px] w-full rounded-md border bg-slate-950 overflow-hidden">
+          <TabsContent value="stdout" className="mt-1">
+            <div className="h-[calc(90vh-150px)] w-full rounded-md border bg-slate-950 overflow-hidden">
               <ScrollArea className="h-full w-full">
                 <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                   <pre
-                    className="text-sm text-slate-50 font-mono whitespace-pre-wrap"
+                    className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
                     style={{
                       overflowWrap: 'anywhere',
                       wordBreak: 'break-word'
@@ -87,12 +89,12 @@ export function JobLogsDialog({ job }: { job: Job }) {
             </div>
           </TabsContent>
 
-          <TabsContent value="stderr" className="mt-4">
-            <div className="h-[500px] w-full rounded-md border bg-slate-950 overflow-hidden">
+          <TabsContent value="stderr" className="!mt-1">
+            <div className="h-[calc(90vh-150px)] w-full rounded-md border bg-slate-950 overflow-hidden">
               <ScrollArea className="h-full w-full">
                 <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                   <pre
-                    className="text-sm text-slate-50 font-mono whitespace-pre-wrap"
+                    className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
                     style={{
                       overflowWrap: 'anywhere',
                       wordBreak: 'break-word'

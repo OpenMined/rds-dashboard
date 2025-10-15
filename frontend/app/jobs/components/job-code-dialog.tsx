@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Code2Icon, FileIcon, FolderIcon, ChevronRight, ChevronDown } from "lucide-react"
+import { Code2Icon, FileIcon, FolderIcon, ChevronRight, ChevronDown, CopyIcon, CheckIcon } from "lucide-react"
 import { jobsApi } from "@/lib/api/jobs"
 import type { Job } from "@/lib/api/api"
 import { cn } from "@/lib/utils"
@@ -61,6 +61,7 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
   const [open, setOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [copied, setCopied] = useState(false)
 
   const { data: codeData, isLoading } = useQuery({
     queryKey: ["job-code", job.uid],
@@ -91,6 +92,16 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
     })
   }
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -102,7 +113,9 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-[90vw] max-h-[85vh]">
+      <DialogContent
+        className="!max-w-[50vw] !max-h-[90vh] !w-[50vw] !h-[90vh] p-4"
+      >
         <DialogHeader>
           <DialogTitle>Job Code: {job.projectName}</DialogTitle>
           <DialogDescription>
@@ -110,9 +123,9 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-4 h-[calc(85vh-120px)] overflow-hidden">
+        <div className="flex gap-4 h-[calc(90vh-160px)] overflow-hidden">
           {/* File Tree Sidebar */}
-          <div className="w-64 border-r pr-4 flex-shrink-0">
+          <div className="w-56 border-r pr-4 flex-shrink-0">
             <div className="text-xs font-semibold mb-2 text-muted-foreground flex items-center gap-1">
               <FolderIcon className="h-3 w-3" />
               Files
@@ -137,7 +150,7 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
 
           {/* Code Display */}
           <div className="flex-1 min-w-0 overflow-hidden">
-            {selectedFile && files[selectedFile] ? (
+            {selectedFile && selectedFile in files ? (
               <div className="h-full flex flex-col overflow-hidden">
                 <div className="text-xs font-medium mb-2 text-muted-foreground">
                   {selectedFile}
@@ -145,15 +158,21 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
                 <div className="flex-1 rounded-md border bg-slate-950 overflow-hidden">
                   <ScrollArea className="h-full w-full">
                     <div className="p-4" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                      <pre
-                        className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
-                        style={{
-                          overflowWrap: 'anywhere',
-                          wordBreak: 'break-word'
-                        }}
-                      >
-                        {files[selectedFile]}
-                      </pre>
+                      {files[selectedFile] ? (
+                        <pre
+                          className="text-xs text-slate-50 font-mono whitespace-pre-wrap"
+                          style={{
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word'
+                          }}
+                        >
+                          {files[selectedFile]}
+                        </pre>
+                      ) : (
+                        <div className="text-muted-foreground text-xs italic">
+                          This file is empty
+                        </div>
+                      )}
                     </div>
                   </ScrollArea>
                 </div>
@@ -167,8 +186,22 @@ export function JobCodeDialog({ job, children }: { job: Job; children?: React.Re
         </div>
 
         {codeData?.code_dir && (
-          <div className="text-xs text-muted-foreground mt-2">
-            Code directory: {codeData.code_dir}
+          <div className="flex items-start gap-2 text-xs text-muted-foreground mt-2">
+            <span className="flex-1 break-all">
+              <span className="font-medium">Code directory:</span> {codeData.code_dir}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 flex-shrink-0"
+              onClick={() => copyToClipboard(codeData.code_dir)}
+            >
+              {copied ? (
+                <CheckIcon className="h-3 w-3 text-green-500" />
+              ) : (
+                <CopyIcon className="h-3 w-3" />
+              )}
+            </Button>
           </div>
         )}
       </DialogContent>
