@@ -97,13 +97,13 @@ function JobsSection() {
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {(["pending", "approved", "denied", "running", "finished", "failed"] as const).map((status) => {
+          {(["pending", "approved", "rejected", "running", "finished", "failed"] as const).map((status) => {
             const statusJobs = getJobsByStatus(data?.jobs ?? [], status)
 
             const columnStyles = {
               pending: "border-yellow-200 dark:border-yellow-900",
               approved: "border-emerald-200 dark:border-emerald-900",
-              denied: "border-red-200 dark:border-red-900",
+              rejected: "border-red-200 dark:border-red-900",
               running: "border-blue-200 dark:border-blue-900",
               finished: "border-green-200 dark:border-green-900",
               failed: "border-orange-200 dark:border-orange-900",
@@ -174,7 +174,7 @@ function JobsSection() {
                                   className="border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30 w-full h-7 text-xs"
                                 >
                                   <X className="mr-1 h-3 w-3" />
-                                  Deny
+                                  Reject
                                 </Button>
                               </>
                             )}

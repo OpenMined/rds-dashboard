@@ -8,7 +8,7 @@ export interface Job {
   description: string
   requestedTime: Date
   requesterEmail: string
-  status: "pending" | "approved" | "denied" | "running" | "finished" | "failed"
+  status: "pending" | "approved" | "rejected" | "running" | "finished" | "failed"
 }
 
 interface JobResponse {
@@ -44,7 +44,7 @@ const jobStatusMap = {
   job_run_finished: "finished",
   approved: "approved",
   shared: "finished",
-  rejected: "denied",
+  rejected: "rejected",
 } as const
 
 interface JobListResponse {

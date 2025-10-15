@@ -14,7 +14,7 @@ export function JobStatusBadge({ jobStatus }: { jobStatus: Job["status"] }) {
       "border-yellow-300 bg-yellow-50 text-yellow-600 dark:border-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-400 hover:bg-yellow-100 hover:border-yellow-400 hover:text-yellow-700 dark:hover:bg-yellow-900/30",
     approved:
       "border-emerald-300 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100 hover:border-emerald-400 hover:text-emerald-700 dark:hover:bg-emerald-900/30",
-    denied:
+    rejected:
       "border-red-200 bg-red-50 text-red-600 dark:border-red-900 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30",
     running:
       "border-blue-300 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-700 dark:hover:bg-blue-900/30",
@@ -27,7 +27,7 @@ export function JobStatusBadge({ jobStatus }: { jobStatus: Job["status"] }) {
   const Icon = {
     pending: CircleDashedIcon,
     approved: CircleCheckBigIcon,
-    denied: CircleXIcon,
+    rejected: CircleXIcon,
     running: LoaderCircleIcon,
     finished: CheckCheckIcon,
     failed: AlertCircleIcon,
@@ -36,7 +36,7 @@ export function JobStatusBadge({ jobStatus }: { jobStatus: Job["status"] }) {
   const tooltipContent = {
     pending: "This job is pending execution",
     approved: "This job has been approved and is ready to run",
-    denied: "This job has been denied",
+    rejected: "This job has been rejected",
     running: "This job is currently running",
     finished: "This job has finished successfully",
     failed: "This job has failed",

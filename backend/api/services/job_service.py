@@ -42,7 +42,7 @@ class JobService:
     async def open_job_code(self, job_uid: str) -> None:
         """Open the job code directory in the file browser."""
         try:
-            job = self.rds_client.job.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=UUID(job_uid))
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
@@ -59,7 +59,7 @@ class JobService:
     async def approve(self, job_uid: str):
         """Approve a job request by its UID."""
         try:
-            job = self.rds_client.job.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=UUID(job_uid))
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
@@ -76,7 +76,7 @@ class JobService:
     async def reject(self, job_uid: str):
         """Reject a job request by its UID."""
         try:
-            job = self.rds_client.job.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=UUID(job_uid))
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
@@ -93,7 +93,7 @@ class JobService:
     async def run(self, job_uid: str) -> None:
         """Run an approved job on private data."""
         try:
-            job = self.rds_client.job.get(uid=job_uid)
+            job = self.rds_client.job.get(uid=UUID(job_uid))
             if not job:
                 raise HTTPException(
                     status_code=404, detail=f"Job with UID '{job_uid}' not found"
