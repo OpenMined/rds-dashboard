@@ -122,6 +122,21 @@ async def get_job_logs(
 
 
 @router.get(
+    "/output/{job_uid}",
+    summary="Get job output files",
+    description="Retrieve all output files and their contents for a specific job",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job_output(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get job output files and their contents."""
+    service = JobService(rds_client)
+    return await service.get_output_files(job_uid)
+
+
+@router.get(
     "/{job_uid}",
     summary="Get job details",
     description="Get detailed metadata for a specific job by its UID",

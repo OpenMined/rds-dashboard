@@ -15,12 +15,13 @@ import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
 import { QUERY_CONFIG } from "@/lib/constants"
 import { useQuery } from "@tanstack/react-query"
-import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-card"
+// import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { JobStatusBadge } from "./components/job-status-badge"
 import { JobLogsDialog } from "./components/job-logs-dialog"
 import { JobDetailsDialog } from "./components/job-details-dialog"
 import { JobCodeDialog } from "./components/job-code-dialog"
+import { JobOutputDialog } from "./components/job-output-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +49,7 @@ export function JobsView() {
         <DeleteAllJobsButton />
       </div>
 
-      <AutoApprovalSettingsCard />
+      {/* <AutoApprovalSettingsCard /> */}
       <JobsSection />
     </div>
   )
@@ -259,7 +260,10 @@ function JobsSection() {
                               </Button>
                             )}
                             {(job.status === "running" || job.status === "finished" || job.status === "failed") && (
-                              <JobLogsDialog job={job} />
+                              <>
+                                <JobLogsDialog job={job} />
+                                <JobOutputDialog job={job} />
+                              </>
                             )}
                             <JobCodeDialog job={job} />
                             <Button
@@ -269,7 +273,7 @@ function JobsSection() {
                               disabled={deleteMutation.isPending}
                               className="border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/30 w-full h-7 text-xs"
                             >
-                              <Trash2 className="mr-1 h-3 w-3" />
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </Button>
                           </div>

@@ -182,6 +182,21 @@ class JobService:
             logger.error(f"Error getting logs for job {job_uid}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    async def get_output_files(self, job_uid: str) -> dict[str, dict[str, str]]:
+        """Get the job output files and their contents."""
+        try:
+            return self.rds_client.job.get_output_dir(UUID(job_uid))
+        except ValueError as e:
+            # Output doesn't exist yet (job not executed) or invalid UUID
+            logger.warning(f"Output not found for job {job_uid}: {e}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Output not available for job {job_uid}. Job may not have been executed yet.",
+            )
+        except Exception as e:
+            logger.error(f"Error getting output for job {job_uid}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     async def delete(self, job_uid: str) -> None:
         """Delete a job by its UID."""
         try:

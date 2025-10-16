@@ -1,12 +1,18 @@
 import { apiClient } from "./api-client"
 
 export interface JobLogs {
+  logs_dir: string
   stdout: string
   stderr: string
 }
 
 export interface JobCode {
   code_dir: string
+  files: Record<string, string>
+}
+
+export interface JobOutput {
+  output_dir: string
   files: Record<string, string>
 }
 
@@ -28,6 +34,9 @@ export const jobsApi = {
   },
   getJobCode: (jobUid: string) => {
     return apiClient.get<JobCode>(`/api/v1/jobs/code/${jobUid}`)
+  },
+  getJobOutput: (jobUid: string) => {
+    return apiClient.get<JobOutput>(`/api/v1/jobs/output/${jobUid}`)
   },
   deleteJob: (jobUid: string) => {
     return apiClient.delete<{}>(`/api/v1/jobs/${jobUid}`)

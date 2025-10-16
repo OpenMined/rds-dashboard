@@ -24,6 +24,7 @@ export function JobLogsDialog({ job }: { job: Job }) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("stdout")
   const [copied, setCopied] = useState(false)
+  const [copiedDir, setCopiedDir] = useState(false)
 
   const { data: logs, refetch, isRefetching } = useQuery({
     queryKey: ["job-logs", job.uid],
@@ -51,11 +52,22 @@ export function JobLogsDialog({ job }: { job: Job }) {
     }
   }
 
+  const copyDirToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedDir(true)
+      toast.success("Copied logs directory path to clipboard")
+      setTimeout(() => setCopiedDir(false), 2000)
+    } catch (err) {
+      toast.error("Failed to copy directory path")
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full h-7 text-xs">
-          <FileTextIcon className="mr-1 h-3 w-3" />
+          <FileTextIcon className="mr-2 h-4 w-4" />
           View Logs
         </Button>
       </DialogTrigger>
@@ -147,6 +159,27 @@ export function JobLogsDialog({ job }: { job: Job }) {
             </div>
           </TabsContent>
         </Tabs>
+
+        {logs?.logs_dir && (
+          <div className="flex items-start gap-2 text-xs mt-2">
+            <span className="text-muted-foreground font-medium">Logs directory:</span>
+            <span className="flex-1 break-all text-blue-500 underline">
+              {logs.logs_dir}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 flex-shrink-0"
+              onClick={() => copyDirToClipboard(logs.logs_dir)}
+            >
+              {copiedDir ? (
+                <CheckIcon className="h-3 w-3 text-green-500" />
+              ) : (
+                <CopyIcon className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
