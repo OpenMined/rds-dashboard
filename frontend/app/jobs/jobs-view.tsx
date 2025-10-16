@@ -14,10 +14,9 @@ import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
 import { QUERY_CONFIG } from "@/lib/constants"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 // import { AutoApprovalSettingsCard } from "./components/auto-approval-settings-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { JobStatusBadge } from "./components/job-status-badge"
 import { JobLogsDialog } from "./components/job-logs-dialog"
 import { JobDetailsDialog } from "./components/job-details-dialog"
 import { JobCodeDialog } from "./components/job-code-dialog"
@@ -54,8 +53,6 @@ export function JobsView() {
     </div>
   )
 }
-
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 function DeleteAllJobsButton() {
   const [open, setOpen] = useState(false)
@@ -198,7 +195,7 @@ function JobsSection() {
                     </div>
                   ) : (
                     statusJobs.map((job) => (
-                      <Card key={job.uid} className="hover:shadow-md transition-shadow">
+                      <Card key={job.uid} className="hover:shadow-lg hover:bg-gray-100 hover:border-gray-700 transition-all border-black dark:border-gray-700 dark:hover:bg-gray-800/50">
                         <CardHeader className="pb-1 px-2 pt-2">
                           <div className="flex items-center justify-between gap-1">
                             <CardTitle className="text-xs truncate font-semibold flex-1">
@@ -271,7 +268,7 @@ function JobsSection() {
                               size="sm"
                               onClick={() => deleteMutation.mutate(job.uid)}
                               disabled={deleteMutation.isPending}
-                              className="border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/30 w-full h-7 text-xs"
+                              className="border-2 border-orange-600 text-orange-700 hover:bg-orange-50 hover:text-orange-800 hover:border-orange-700 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/30 w-full h-7 text-xs font-medium"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete

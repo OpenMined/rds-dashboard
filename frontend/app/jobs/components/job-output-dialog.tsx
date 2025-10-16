@@ -112,7 +112,7 @@ export function JobOutputDialog({ job, children }: { job: Job; children?: React.
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant="outline" size="sm" className="w-full h-7 text-xs">
+          <Button size="sm" className="w-full h-7 text-xs border border-black bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800">
             <FolderOutputIcon className="mr-2 h-4 w-4" />
             View Output
           </Button>
