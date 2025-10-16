@@ -12,9 +12,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       style={
         {
-          // "--normal-bg": "var(--color-popover)",
-          "--normal-text": "var(--color-popover-foreground)",
-          "--normal-border": "var(--color-border)",
+          "--normal-bg": "hsl(var(--background))",
+          "--normal-text": "hsl(var(--foreground))",
+          "--normal-border": "hsl(var(--border))",
         } as React.CSSProperties
       }
       icons={
@@ -24,7 +24,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
+          toast: "!bg-background !text-foreground !border-border !shadow-lg",
           closeButton: "opacity-0 group-hover:opacity-100 !transition",
+          success: "!bg-background !text-foreground !border-border",
+          error: "!bg-background !text-foreground !border-border",
+          info: "!bg-background !text-foreground !border-border",
         },
       }}
       {...props}
