@@ -134,3 +134,21 @@ async def get_job(
     """Get detailed job metadata."""
     service = JobService(rds_client)
     return await service.get_job(job_uid)
+
+
+@router.delete(
+    "",
+    summary="Delete all jobs",
+    description="Delete all jobs from the system",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_all_jobs(
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Delete all jobs."""
+    service = JobService(rds_client)
+    deleted_count = await service.delete_all()
+    return JSONResponse(
+        content={"message": f"Deleted {deleted_count} job(s).", "count": deleted_count},
+        status_code=200,
+    )

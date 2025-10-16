@@ -70,7 +70,7 @@ export function JobLogsDialog({ job }: { job: Job }) {
                 View stdout and stderr output from the job execution
               </DialogDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mr-6">
               <Button
                 variant="outline"
                 size="icon"

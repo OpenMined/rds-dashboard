@@ -196,3 +196,13 @@ class JobService:
         except Exception as e:
             logger.error(f"Error deleting job {job_uid}: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def delete_all(self) -> int:
+        """Delete all jobs in the system."""
+        try:
+            deleted_count = self.rds_client.job.delete_all()
+            logger.info(f"Deleted {deleted_count} job(s).")
+            return deleted_count
+        except Exception as e:
+            logger.error(f"Error deleting all jobs: {e}")
+            raise HTTPException(status_code=500, detail=str(e))

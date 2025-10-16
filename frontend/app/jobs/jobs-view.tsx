@@ -21,15 +21,31 @@ import { JobStatusBadge } from "./components/job-status-badge"
 import { JobLogsDialog } from "./components/job-logs-dialog"
 import { JobDetailsDialog } from "./components/job-details-dialog"
 import { JobCodeDialog } from "./components/job-code-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
+import { useState } from "react"
 
 export function JobsView() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Jobs</h1>
-        <p className="text-muted-foreground">
-          Manage data access requests and research projects
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Jobs</h1>
+          <p className="text-muted-foreground">
+            Manage data access requests and research projects
+          </p>
+        </div>
+        <DeleteAllJobsButton />
       </div>
 
       <AutoApprovalSettingsCard />
@@ -39,6 +55,57 @@ export function JobsView() {
 }
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+
+function DeleteAllJobsButton() {
+  const [open, setOpen] = useState(false)
+  const queryClient = useQueryClient()
+
+  const deleteAllMutation = useMutation({
+    mutationFn: () => jobsApi.deleteAllJobs(),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] })
+      toast.success(`Successfully deleted ${response.count} job(s)`)
+      setOpen(false)
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete jobs: ${error.message}`)
+    },
+  })
+
+  const handleDeleteAll = () => {
+    deleteAllMutation.mutate()
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" size="sm">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete All Jobs
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete all jobs and their associated data
+            (logs, outputs, and user code). This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteAll}
+            disabled={deleteAllMutation.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleteAllMutation.isPending ? "Deleting..." : "Delete All"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 function JobsSection() {
   const jobsQuery = useQuery({

@@ -32,4 +32,7 @@ export const jobsApi = {
   deleteJob: (jobUid: string) => {
     return apiClient.delete<{}>(`/api/v1/jobs/${jobUid}`)
   },
+  deleteAllJobs: () => {
+    return apiClient.delete<{ message: string; count: number }>(`/api/v1/jobs`)
+  },
 }
