@@ -29,12 +29,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   AlertTriangle,
   Download,
-  FolderSymlinkIcon,
   Trash2,
 } from "lucide-react"
 import { useState } from "react"
 import { UpdateDatasetModal } from "./update-dataset-modal"
-import { datasetsApi } from "@/lib/api/datasets"
+import { DatasetFilesDialog } from "./dataset-files-dialog"
 import { toast } from "sonner"
 
 interface DatasetActionsSheetProps {
@@ -197,14 +196,7 @@ export function DatasetActionsSheet({
                   <Download className="h-4 w-4" />
                   Download Dataset
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => datasetsApi.openLocalDirectory(dataset.uid)}
-                >
-                  <FolderSymlinkIcon />
-                  View Dataset
-                </Button>
+                <DatasetFilesDialog dataset={dataset} />
                 <UpdateDatasetModal dataset={dataset} />
                 <Button
                   variant="outline"

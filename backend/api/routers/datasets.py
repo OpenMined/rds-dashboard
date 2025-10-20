@@ -1,5 +1,5 @@
 import traceback
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -176,11 +176,12 @@ async def download_dataset_private(
     return await service.download_private_file(dataset_uuid)
 
 
-@router.get("/open-local-directory/{dataset_uid}")
-async def open_local_directory(
+@router.get("/files/{dataset_uid}")
+async def get_dataset_files(
     dataset_uid: str,
+    dataset_type: Literal["private", "mock"] = "private",
     rds_client: RDSClient = Depends(get_rds_client),
 ):
+    """Get the file structure and contents of a dataset."""
     service = DatasetService(rds_client)
-    await service.open_local_directory(dataset_uid)
-    return {"message": f"Opened local directory for dataset {dataset_uid}"}
+    return await service.get_dataset_files(dataset_uid, dataset_type=dataset_type)

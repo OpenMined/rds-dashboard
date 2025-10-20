@@ -8,6 +8,12 @@ from syft_rds import RDSClient
 from ...models import ListJobsResponse
 
 
+# Security and resource limits
+MAX_PREVIEW_SIZE = 1024 * 1024  # 1MB per file
+MAX_TOTAL_SIZE = 50 * 1024 * 1024  # 50MB total
+MAX_FILE_COUNT = 1000  # Maximum number of files
+
+
 class JobService:
     """Service class for job-related operations."""
 
@@ -23,6 +29,17 @@ class JobService:
         except Exception as e:
             logger.error(f"Error listing jobs: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    def _format_file_size(self, size_bytes: int) -> str:
+        """Format file size with appropriate units consistently."""
+        MB = 1024 * 1024
+        KB = 1024
+
+        if size_bytes >= MB:
+            return f"{size_bytes / MB:.2f} MB"
+        elif size_bytes >= KB:
+            return f"{size_bytes / KB:.2f} KB"
+        return f"{size_bytes} B"
 
     async def get_job(self, job_uid: str):
         """Get detailed metadata for a specific job."""
@@ -54,6 +71,9 @@ class JobService:
             if not code_dir.exists():
                 logger.warning(f"Code directory does not exist: {code_dir}")
                 return {"code_dir": str(code_dir), "files": {}}
+
+            # Resolve paths for security validation
+            code_dir_resolved = code_dir.resolve()
 
             # Directories and patterns to ignore
             ignore_patterns = {
@@ -87,22 +107,63 @@ class JobService:
                         return True
                 return False
 
+            total_size = 0
+            file_count = 0
+
             # Read all files (except ignored ones)
             for file_path in code_dir.rglob("*"):
                 # Skip directories
                 if file_path.is_dir():
                     continue
 
+                # Security: Validate file is within code directory (prevent path traversal)
+                try:
+                    file_path.resolve().relative_to(code_dir_resolved)
+                except ValueError:
+                    logger.warning(f"Path traversal attempt detected: {file_path}")
+                    continue
+
                 # Skip ignored paths
                 if should_ignore(file_path.relative_to(code_dir)):
                     continue
 
+                # Check file count limit
+                file_count += 1
+                if file_count > MAX_FILE_COUNT:
+                    logger.warning(
+                        f"File count limit ({MAX_FILE_COUNT}) exceeded for job {job_uid}"
+                    )
+                    files["_limit_exceeded"] = (
+                        f"[Job contains too many files. Only first {MAX_FILE_COUNT} files shown]"
+                    )
+                    break
+
                 relative_path = file_path.relative_to(code_dir)
+                file_size = file_path.stat().st_size
+
+                # Check file size limit
+                if file_size > MAX_PREVIEW_SIZE:
+                    files[str(relative_path)] = (
+                        f"[File too large to preview: {self._format_file_size(file_size)}]"
+                    )
+                    continue
+
+                # Check total size limit
+                if total_size + file_size > MAX_TOTAL_SIZE:
+                    files[str(relative_path)] = "[Total preview size limit exceeded]"
+                    continue
+
                 try:
-                    # Try to read as text
-                    files[str(relative_path)] = file_path.read_text()
+                    # Try to read as text with explicit UTF-8 encoding
+                    content = file_path.read_text(encoding="utf-8", errors="replace")
+                    files[str(relative_path)] = content
+                    total_size += file_size
+                except UnicodeDecodeError:
+                    files[str(relative_path)] = "[Unable to decode file as UTF-8]"
+                    logger.debug(f"Unicode decode error for {file_path}")
                 except Exception as e:
                     # Skip binary files or unreadable files
+                    files[str(relative_path)] = f"[Error reading file: {str(e)}]"
                     logger.debug(f"Skipping {file_path}: {e}")
 
             return {"code_dir": str(code_dir), "files": files}
