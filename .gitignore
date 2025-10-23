@@ -178,4 +178,8 @@ cython_debug/
 # local directory
 local/
 
+# MacOS files
 .DS_Store
+
+# AI artifacts
+.claude/

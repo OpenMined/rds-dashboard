@@ -1,0 +1,135 @@
+# Multi-arch Dockerfile for RDS Dashboard with SyftBox integration
+# Supports: linux/amd64, linux/arm64
+# Multi-stage build: Python builder + Production runtime
+# Note: Frontend (frontend/out/) is copied from git (pre-built for SyftBox installs)
+
+# === Build Arguments (Global) ===
+ARG PYTHON_VERSION=3.12.8
+ARG SYFTBOX_VERSION=0.8.6
+ARG SYFT_RDS_REF=feature/python-runtime-uv-envs
+ARG APP_USER=syftboxuser
+ARG APP_UID=1000
+
+# ===================================================================
+# Stage 1: Python Builder
+# ===================================================================
+FROM python:${PYTHON_VERSION}-slim-bookworm AS python-builder
+
+ARG SYFT_RDS_REF
+
+# Copy uv from official image (preferred method - faster and more reliable)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install minimal build dependencies
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy Python dependency files
+COPY pyproject.toml uv.lock ./
+
+# Create virtual environment and install dependencies
+RUN uv venv /app/.venv && \
+    . /app/.venv/bin/activate && \
+    uv pip install -e . && \
+    uv pip install "git+https://github.com/OpenMined/syft-rds@${SYFT_RDS_REF}"
+
+# Copy backend source (needed for -e install)
+COPY backend/ ./backend/
+
+# ===================================================================
+# Stage 2: Production Runtime
+# ===================================================================
+FROM python:${PYTHON_VERSION}-slim-bookworm AS production
+
+ARG SYFTBOX_VERSION
+ARG TARGETARCH
+ARG APP_USER
+ARG APP_UID
+
+# Install runtime dependencies
+# Note: git required for user jobs that install git-based Python dependencies
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    supervisor \
+    jq \
+    wget \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy uv from official image (needed for job execution with uv run)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install SyftBox client with architecture detection
+# TODO: Add checksum verification when SHA256 sums are published with releases
+RUN ARCH=${TARGETARCH} && \
+    SYFTBOX_URL="https://github.com/OpenMined/syftbox/releases/download/v${SYFTBOX_VERSION}/syftbox_client_linux_${ARCH}.tar.gz" && \
+    echo "Downloading SyftBox for linux_${ARCH} from ${SYFTBOX_URL}" && \
+    wget -q "${SYFTBOX_URL}" -O /tmp/syftbox.tar.gz && \
+    # TODO: Uncomment when checksums are available:
+    # wget -q "${SYFTBOX_URL}.sha256" -O /tmp/syftbox.tar.gz.sha256 && \
+    # cd /tmp && sha256sum -c syftbox.tar.gz.sha256 && \
+    tar -xzf /tmp/syftbox.tar.gz -C /tmp && \
+    mv /tmp/syftbox_client_linux_${ARCH}/syftbox /usr/local/bin/syftbox && \
+    chmod +x /usr/local/bin/syftbox && \
+    rm -rf /tmp/syftbox.tar.gz /tmp/syftbox_client_linux_${ARCH} && \
+    syftbox --version
+
+# Create non-root user
+RUN useradd -m -s /bin/bash -u ${APP_UID} ${APP_USER} && \
+    mkdir -p /home/${APP_USER}/.syftbox /home/${APP_USER}/SyftBox && \
+    chown -R ${APP_USER}:${APP_USER} /home/${APP_USER}
+
+WORKDIR /app
+
+# Copy Python virtual environment from builder
+COPY --from=python-builder --chown=${APP_USER}:${APP_USER} /app/.venv /app/.venv
+
+# Copy backend code
+COPY --chown=${APP_USER}:${APP_USER} backend/ ./backend/
+COPY --chown=${APP_USER}:${APP_USER} pyproject.toml ./
+
+# Copy pre-built frontend from repository
+COPY --chown=${APP_USER}:${APP_USER} frontend/out/ ./frontend/out/
+
+# Verify frontend build exists and has content
+RUN test -f ./frontend/out/index.html || \
+    (echo "ERROR: frontend/out/index.html not found!" && \
+     echo "Frontend must be built before Docker build." && \
+     echo "Run: bun run --cwd frontend build" && \
+     exit 1)
+
+# Copy scripts
+COPY --chown=${APP_USER}:${APP_USER} scripts/ ./scripts/
+RUN chmod +x ./scripts/entrypoint.sh ./scripts/setup-syftbox.sh
+
+# Copy other necessary files
+COPY --chown=${APP_USER}:${APP_USER} justfile ./
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+# Switch to non-root user
+USER ${APP_USER}
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Metadata labels (OCI-standard)
+LABEL org.opencontainers.image.title="RDS Dashboard" \
+      org.opencontainers.image.description="SyftBox RDS Dashboard with FastAPI backend and Next.js frontend" \
+      org.opencontainers.image.vendor="OpenMined" \
+      org.opencontainers.image.source="https://github.com/OpenMined/rds-dashboard"
+
+# Entrypoint and command
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
+CMD ["supervisord", "-c", "/app/scripts/supervisord.conf", "-n"]

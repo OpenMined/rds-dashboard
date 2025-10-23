@@ -58,3 +58,26 @@ window.apiConfig.reset() // Reset if needed
 ## Build
 
 Run `just prod` to export the frontend into a static build and start the FastAPI backend server.
+
+## Note: Frontend Build Output (`frontend/out/`)
+
+**⚠️ The `frontend/out/` directory is intentionally committed to git.**
+
+This is required for SyftBox app installation:
+
+1. **When users install via**: `syftbox app install https://github.com/OpenMined/rds-dashboard`
+   - SyftBox clones this repository
+   - Executes `run.sh` which only sets up Python environment (no frontend build step)
+   - FastAPI serves pre-built static files from `frontend/out/`
+   - [SyftUI](https://github.com/OpenMined/SyftUI) embeds the app (dashboard) in an iframe
+
+2. **Deployment models**:
+   - **SyftBox Install**: Requires pre-built `frontend/out/` in git ✅
+   - **Docker**: Builds frontend during image creation (doesn't need committed build, but harmless)
+
+**Before committing frontend changes**, always rebuild:
+```bash
+bun run --cwd frontend build
+```
+
+This ensures users installing via SyftBox get the latest frontend.
