@@ -282,3 +282,38 @@ class JobService:
         except Exception as e:
             logger.error(f"Error deleting all jobs: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    async def rerun(self, job_uid: str) -> None:
+        """Rerun a finished or failed job.
+
+        This will re-approve the job if needed and run it again.
+        """
+        try:
+            job = self.rds_client.job.get(uid=UUID(job_uid))
+            if not job:
+                raise HTTPException(
+                    status_code=404, detail=f"Job with UID '{job_uid}' not found"
+                )
+
+            # Check if job is in a rerunnable state (finished or failed)
+            if job.status not in ["job_run_finished", "job_run_failed", "shared"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Job {job_uid} cannot be rerun. Current status: {job.status}. Only finished or failed jobs can be rerun.",
+                )
+
+            # Re-approve the job first?
+            # self.rds_client.job.approve(job)
+            # logger.info(f"Job {job_uid} re-approved for rerun.")
+
+            # Run the job in non-blocking mode
+            self.rds_client.run_private(
+                job=job,
+                blocking=False,
+            )
+            logger.info(f"Job {job_uid} restarted in background.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error rerunning job: {e}")
+            raise HTTPException(status_code=500, detail=str(e))

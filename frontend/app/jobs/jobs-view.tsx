@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, Briefcase, Play, Trash2, Info } from "lucide-react"
+import { Check, X, Briefcase, Play, Trash2, Info, RotateCw } from "lucide-react"
 import { apiService, type Job } from "@/lib/api/api"
 import { timeAgo } from "@/lib/utils"
 import { jobsApi } from "@/lib/api/jobs"
@@ -128,6 +128,16 @@ function JobsSection() {
   const runMutation = useMutation({
     mutationFn: (jobUid: string) => jobsApi.runJob(jobUid),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+  })
+  const rerunMutation = useMutation({
+    mutationFn: (jobUid: string) => jobsApi.rerunJob(jobUid),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] })
+      toast.success("Job restarted successfully")
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to rerun job: ${error.message}`)
+    },
   })
   const deleteMutation = useMutation({
     mutationFn: (jobUid: string) => jobsApi.deleteJob(jobUid),
@@ -261,6 +271,18 @@ function JobsSection() {
                                 <JobLogsDialog job={job} />
                                 <JobOutputDialog job={job} />
                               </>
+                            )}
+                            {(job.status === "finished" || job.status === "failed") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => rerunMutation.mutate(job.uid)}
+                                disabled={rerunMutation.isPending}
+                                className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30 w-full h-7 text-xs"
+                              >
+                                <RotateCw className="mr-1 h-3 w-3" />
+                                {rerunMutation.isPending ? "Starting..." : "Rerun"}
+                              </Button>
                             )}
                             <JobCodeDialog job={job} />
                             <Button

@@ -29,6 +29,9 @@ export const jobsApi = {
   runJob: (jobUid: string) => {
     return apiClient.post<{}>(`/api/v1/jobs/run/${jobUid}`, {})
   },
+  rerunJob: (jobUid: string) => {
+    return apiClient.post<{}>(`/api/v1/jobs/rerun/${jobUid}`, {})
+  },
   getJobLogs: (jobUid: string) => {
     return apiClient.get<JobLogs>(`/api/v1/jobs/logs/${jobUid}`)
   },

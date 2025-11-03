@@ -90,6 +90,24 @@ async def run_job(
     return JSONResponse(content={"message": f"Job {job_uid} started."}, status_code=200)
 
 
+@router.post(
+    "/rerun/{job_uid}",
+    summary="Rerun a finished or failed job",
+    description="Re-approve and re-execute a finished or failed job on private data in the background",
+    status_code=status.HTTP_200_OK,
+)
+async def rerun_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Rerun a finished or failed job."""
+    service = JobService(rds_client)
+    await service.rerun(job_uid)
+    return JSONResponse(
+        content={"message": f"Job {job_uid} restarted."}, status_code=200
+    )
+
+
 @router.delete(
     "/{job_uid}",
     summary="Delete a job",

@@ -183,3 +183,5 @@ local/
 
 # AI artifacts
 .claude/
+
+docs/plans/
