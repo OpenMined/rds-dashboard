@@ -109,6 +109,7 @@ docker build \
 **Available build arguments:**
 - `SYFTBOX_VERSION` - SyftBox client version (default: `0.8.7`)
 - `PYTHON_VERSION` - Python base image version (default: `3.12.8`)
+- `APP_VERSION` - RDS Dashboard version (default: `0.1.0`)
 - `APP_USER` - Container user name (default: `syftboxuser`)
 - `APP_UID` - Container user ID (default: `1000`)
 
@@ -140,6 +141,7 @@ docker build \
 |----------|---------|-------------|
 | `PYTHON_VERSION` | `3.12.8` | Python base image version |
 | `SYFTBOX_VERSION` | `0.8.7` | SyftBox client release version |
+| `APP_VERSION` | `0.1.0` | RDS Dashboard version (OCI label) |
 | `APP_USER` | `syftboxuser` | Container user (non-root) |
 | `APP_UID` | `1000` | Container user ID |
 

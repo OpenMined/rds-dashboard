@@ -23,6 +23,7 @@ export SYFTBOX_EMAIL
 export SYFTBOX_REFRESH_TOKEN
 export SYFTBOX_SERVER="${SYFTBOX_SERVER:-https://syftbox.net}"
 export DEBUG="${DEBUG:-false}"
+export API_PORT="${API_PORT:-8000}"
 
 # Create logs directory for supervisord (must exist before supervisord starts)
 SYFTBOX_CONFIG_DIR="/home/syftboxuser/.syftbox"

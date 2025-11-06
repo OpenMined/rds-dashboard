@@ -6,6 +6,7 @@
 # === Build Arguments (Global) ===
 ARG PYTHON_VERSION=3.12.8
 ARG SYFTBOX_VERSION=0.8.7
+ARG APP_VERSION=0.1.0
 ARG APP_USER=syftboxuser
 ARG APP_UID=1000
 
@@ -42,6 +43,7 @@ COPY backend/ ./backend/
 FROM python:${PYTHON_VERSION}-slim-bookworm AS production
 
 ARG SYFTBOX_VERSION
+ARG APP_VERSION
 ARG TARGETARCH
 ARG APP_USER
 ARG APP_UID
@@ -100,9 +102,6 @@ RUN test -f ./frontend/out/index.html || \
 COPY --chown=${APP_USER}:${APP_USER} scripts/ ./scripts/
 RUN chmod +x ./scripts/entrypoint.sh ./scripts/setup-syftbox.sh
 
-# Copy other necessary files
-COPY --chown=${APP_USER}:${APP_USER} justfile ./
-
 # Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
@@ -110,17 +109,25 @@ ENV PYTHONUNBUFFERED=1 \
 # Switch to non-root user
 USER ${APP_USER}
 
-# Expose port
+# Expose default port
+# Note: The actual port is controlled by API_PORT environment variable at runtime.
+# When using custom ports, you must map the port accordingly with -p flag.
+# Examples:
+#   Default port:  docker run -p 8000:8000 ...
+#   Custom port:   docker run -e API_PORT=9000 -p 9000:9000 ...
 EXPOSE 8000
 
 # Health check
+# Note: Health check uses the container-internal port, which matches API_PORT.
+# If you change API_PORT, the health check will automatically use the new port.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:${API_PORT:-8000}/api/health || exit 1
 
 # Metadata labels (OCI-standard)
 LABEL org.opencontainers.image.title="RDS Dashboard" \
       org.opencontainers.image.description="SyftBox RDS Dashboard with FastAPI backend and Next.js frontend" \
       org.opencontainers.image.vendor="OpenMined" \
+      org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.source="https://github.com/OpenMined/rds-dashboard"
 
 # Entrypoint and command
