@@ -184,4 +184,6 @@ local/
 # AI artifacts
 .claude/
 
+# dev docs and scripts
 docs/plans/
+scripts/dev/

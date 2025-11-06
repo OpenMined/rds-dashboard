@@ -24,6 +24,10 @@ export SYFTBOX_REFRESH_TOKEN
 export SYFTBOX_SERVER="${SYFTBOX_SERVER:-https://syftbox.net}"
 export DEBUG="${DEBUG:-false}"
 
+# Create logs directory for supervisord (must exist before supervisord starts)
+SYFTBOX_CONFIG_DIR="/home/syftboxuser/.syftbox"
+mkdir -p "${SYFTBOX_CONFIG_DIR}/logs"
+
 # Start supervisord with the provided command or default
 if [ "$#" -eq 0 ]; then
     echo "Starting supervisord..."

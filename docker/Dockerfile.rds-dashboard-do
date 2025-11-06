@@ -5,8 +5,7 @@
 
 # === Build Arguments (Global) ===
 ARG PYTHON_VERSION=3.12.8
-ARG SYFTBOX_VERSION=0.8.6
-ARG SYFT_RDS_REF=feature/python-runtime-uv-envs
+ARG SYFTBOX_VERSION=0.8.7
 ARG APP_USER=syftboxuser
 ARG APP_UID=1000
 
@@ -14,8 +13,6 @@ ARG APP_UID=1000
 # Stage 1: Python Builder
 # ===================================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm AS python-builder
-
-ARG SYFT_RDS_REF
 
 # Copy uv from official image (preferred method - faster and more reliable)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -34,8 +31,7 @@ COPY pyproject.toml uv.lock ./
 # Create virtual environment and install dependencies
 RUN uv venv /app/.venv && \
     . /app/.venv/bin/activate && \
-    uv pip install -e . && \
-    uv pip install "git+https://github.com/OpenMined/syft-rds@${SYFT_RDS_REF}"
+    uv pip install -e .
 
 # Copy backend source (needed for -e install)
 COPY backend/ ./backend/
@@ -70,9 +66,6 @@ RUN ARCH=${TARGETARCH} && \
     SYFTBOX_URL="https://github.com/OpenMined/syftbox/releases/download/v${SYFTBOX_VERSION}/syftbox_client_linux_${ARCH}.tar.gz" && \
     echo "Downloading SyftBox for linux_${ARCH} from ${SYFTBOX_URL}" && \
     wget -q "${SYFTBOX_URL}" -O /tmp/syftbox.tar.gz && \
-    # TODO: Uncomment when checksums are available:
-    # wget -q "${SYFTBOX_URL}.sha256" -O /tmp/syftbox.tar.gz.sha256 && \
-    # cd /tmp && sha256sum -c syftbox.tar.gz.sha256 && \
     tar -xzf /tmp/syftbox.tar.gz -C /tmp && \
     mv /tmp/syftbox_client_linux_${ARCH}/syftbox /usr/local/bin/syftbox && \
     chmod +x /usr/local/bin/syftbox && \

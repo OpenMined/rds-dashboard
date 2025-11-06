@@ -61,8 +61,9 @@ echo "  Email: $SYFTBOX_EMAIL"
 echo "  Server: $SYFTBOX_SERVER"
 echo "  Data dir: $SYFTBOX_DATA_DIR"
 
-# Create config directory
+# Create config directory and logs directory
 mkdir -p "$SYFTBOX_CONFIG_DIR"
+mkdir -p "${SYFTBOX_CONFIG_DIR}/logs"
 
 # Generate config.json using jq with proper escaping (prevents JSON injection)
 # Use umask to ensure file is created with secure permissions 600
@@ -94,20 +95,49 @@ DATASITES_DIR="${SYFTBOX_DATA_DIR}/datasites"
 mkdir -p "$DATASITES_DIR"
 
 cat > "${DATASITES_DIR}/syftignore" <<'EOF'
-# Ignore spamming users
-flower-test-group*@openmined.org
-do-*-oc@openmined.org
-*organic-coop@openmined.org
-**/syft_agent
-aggregator@openmined.org
-dhingra.atul92@gmail.com
-koen@openmined.org
-zach@empire.email
-kj@kj.dev
-amita.j.shukla@gmail.com
-nut.chukamphaeng@gmail.com
-jajif89762@ofacer.com
-tauquir@openmined.org
+# SyftBox Ignore Patterns
+# ========================
+# This file controls which datasites and paths are excluded during sync.
+# Patterns follow gitignore-style syntax with SyftBox-specific extensions.
+#
+# Pattern Syntax:
+#   user@example.com          - Ignore specific user's datasite
+#   *@blocked.org             - Ignore entire domain
+#   spam-*@example.com        - Wildcard matching (prefix)
+#   **/temp_*                 - Ignore paths matching pattern
+#   directory/subdirectory    - Ignore specific path
+#
+# Examples:
+#   # Block specific spam accounts
+#   # spammer@example.com
+#   # suspicious-bot@example.org
+#
+#   # Block entire organization
+#   # *@spam-domain.com
+#
+#   # Ignore test/dev accounts
+#   # test-*@example.com
+#   # dev-*@example.com
+#
+#   # Ignore specific directories
+#   # **/temp
+#   # **/cache
+#   # **/test_data
+#
+# Usage:
+#   1. Uncomment patterns you need (remove leading #)
+#   2. Add your own patterns below
+#   3. Restart SyftBox client to apply changes
+#
+# To add patterns at runtime:
+#   docker exec <container> bash -c 'echo "user@example.com" >> ~/SyftBox/datasites/syftignore'
+#
+# To mount custom syftignore:
+#   docker run -v /path/to/syftignore:/home/syftboxuser/SyftBox/datasites/syftignore ...
+#
+# Your custom patterns (add below this line):
+# -----------------------------------------------
+
 EOF
 
 echo "✓ syftignore file created at ${DATASITES_DIR}/syftignore"

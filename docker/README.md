@@ -86,6 +86,32 @@ docker build \
   .
 ```
 
+
+### Build with Args
+
+```bash
+# Override SyftBox version
+docker build \
+  -f docker/Dockerfile.rds-dashboard-do \
+  --build-arg SYFTBOX_VERSION=0.9.0 \
+  -t rds-dashboard:custom \
+  .
+
+# Override multiple arguments
+docker build \
+  -f docker/Dockerfile.rds-dashboard-do \
+  --build-arg SYFTBOX_VERSION=0.9.0 \
+  --build-arg PYTHON_VERSION=3.11 \
+  -t rds-dashboard:custom \
+  .
+```
+
+**Available build arguments:**
+- `SYFTBOX_VERSION` - SyftBox client version (default: `0.8.7`)
+- `PYTHON_VERSION` - Python base image version (default: `3.12.8`)
+- `APP_USER` - Container user name (default: `syftboxuser`)
+- `APP_UID` - Container user ID (default: `1000`)
+
 ### Multi-Architecture Build
 
 ```bash
@@ -105,8 +131,7 @@ You can customize the build with these arguments:
 docker build \
   -f docker/Dockerfile.rds-dashboard-do \
   --build-arg PYTHON_VERSION=3.12.8 \
-  --build-arg SYFTBOX_VERSION=0.8.6 \
-  --build-arg SYFT_RDS_REF=main \
+  --build-arg SYFTBOX_VERSION=0.8.7 \
   -t rds-dashboard:custom \
   .
 ```
@@ -114,10 +139,11 @@ docker build \
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `PYTHON_VERSION` | `3.12.8` | Python base image version |
-| `SYFTBOX_VERSION` | `0.8.6` | SyftBox client release version |
-| `SYFT_RDS_REF` | `feature/python-runtime-uv-envs` | syft-rds Git branch/tag/commit |
+| `SYFTBOX_VERSION` | `0.8.7` | SyftBox client release version |
 | `APP_USER` | `syftboxuser` | Container user (non-root) |
 | `APP_UID` | `1000` | Container user ID |
+
+**Note:** syft-rds is installed from PyPI via `pyproject.toml` (currently `syft-rds==0.4.2`). To use a different version, update `pyproject.toml` before building.
 
 ---
 
@@ -425,7 +451,7 @@ docker exec rds-dashboard ls -la /home/syftboxuser/.syftbox
 docker inspect rds-dashboard | jq '.[0].State.Health'
 
 # Test health endpoint manually
-docker exec rds-dashboard curl -f http://localhost:8000/api/v1/health
+docker exec rds-dashboard curl -f http://localhost:8000/api/health
 ```
 
 ---
@@ -464,7 +490,7 @@ The container includes a built-in health check:
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/health || exit 1
+    CMD curl -f http://localhost:8000/api/health || exit 1
 ```
 
 Check health status:
@@ -595,13 +621,13 @@ spec:
           mountPath: /home/syftboxuser/.syftbox
         livenessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/health
             port: 8000
           initialDelaySeconds: 40
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/health
             port: 8000
           initialDelaySeconds: 10
           periodSeconds: 5
