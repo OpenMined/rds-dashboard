@@ -6,8 +6,8 @@ set -e
 [ "${DEBUG:-false}" = "true" ] && set -x
 
 # Configuration paths
-SYFTBOX_USER="${SYFTBOX_USER:-syftboxuser}"
-SYFTBOX_HOME="/home/${SYFTBOX_USER}"
+# Use $HOME to support any APP_USER setting (not hardcoded to syftboxuser)
+SYFTBOX_HOME="${HOME}"
 SYFTBOX_CONFIG_DIR="${SYFTBOX_HOME}/.syftbox"
 SYFTBOX_DATA_DIR="${SYFTBOX_HOME}/SyftBox"
 CONFIG_FILE="${SYFTBOX_CONFIG_DIR}/config.json"
@@ -133,7 +133,7 @@ cat > "${DATASITES_DIR}/syftignore" <<'EOF'
 #   docker exec <container> bash -c 'echo "user@example.com" >> ~/SyftBox/datasites/syftignore'
 #
 # To mount custom syftignore:
-#   docker run -v /path/to/syftignore:/home/syftboxuser/SyftBox/datasites/syftignore ...
+#   docker run -v /path/to/syftignore:$HOME/SyftBox/datasites/syftignore ...
 #
 # Your custom patterns (add below this line):
 # -----------------------------------------------

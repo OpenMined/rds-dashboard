@@ -34,7 +34,7 @@ RUN uv venv /app/.venv && \
     . /app/.venv/bin/activate && \
     uv pip install -e .
 
-# Copy backend source (needed for -e install)
+# Copy backend source (required for editable install specified in pyproject.toml)
 COPY backend/ ./backend/
 
 # ===================================================================

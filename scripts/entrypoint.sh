@@ -24,9 +24,12 @@ export SYFTBOX_REFRESH_TOKEN
 export SYFTBOX_SERVER="${SYFTBOX_SERVER:-https://syftbox.net}"
 export DEBUG="${DEBUG:-false}"
 export API_PORT="${API_PORT:-8000}"
+export HOME="${HOME}"
+export APP_USER="$(whoami)"
 
 # Create logs directory for supervisord (must exist before supervisord starts)
-SYFTBOX_CONFIG_DIR="/home/syftboxuser/.syftbox"
+# Use $HOME to support any APP_USER setting (not hardcoded to syftboxuser)
+SYFTBOX_CONFIG_DIR="${HOME}/.syftbox"
 mkdir -p "${SYFTBOX_CONFIG_DIR}/logs"
 
 # Start supervisord with the provided command or default
