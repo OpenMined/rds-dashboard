@@ -19,9 +19,11 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS python-builder
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install minimal build dependencies
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -50,13 +52,15 @@ ARG APP_UID
 
 # Install runtime dependencies
 # Note: git required for user jobs that install git-based Python dependencies
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    supervisor \
-    jq \
-    wget \
-    curl \
-    git \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        supervisor \
+        jq \
+        wget \
+        curl \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy uv from official image (needed for job execution with uv run)
