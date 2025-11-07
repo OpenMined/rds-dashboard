@@ -1,13 +1,12 @@
 # backend/api/services/dataset_service.py
 from pathlib import Path
 import tempfile
-from typing import Iterator, Literal, Optional
+from typing_extensions import Iterator, Literal, Optional, List
 
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import requests
-from syft_core.url import SyftBoxURL
 from syft_rds.models import DatasetUpdate
 from syft_rds import RDSClient
 
@@ -31,30 +30,32 @@ class DatasetService:
 
     async def list_datasets(self) -> ListDatasetsResponse:
         """List all datasets with proper formatting."""
-        datasets = [
+        datasets: List[DatasetModel] = [
             DatasetModel.model_validate(dataset)
             for dataset in self.rds_client.dataset.get_all()
         ]
 
-        # Process datasets to fix temporary issues with RDS
+        # Process datasets to add additional metadata
         for dataset in datasets:
-            private_file_path = next(dataset.private_path.iterdir(), None)
-            dataset.private = SyftBoxURL.from_path(
-                private_file_path, self.syftbox_client.workspace
-            )
+            # Calculate private dataset size
+            try:
+                private_file_path = next(dataset.private_path.iterdir(), None)
+                dataset.private_size = (
+                    private_file_path.stat().st_size if private_file_path else 0
+                )
+            except (StopIteration, OSError, FileNotFoundError):
+                dataset.private_size = 0
 
-            mock_file_path = next(dataset.mock_path.iterdir(), None)
-            dataset.mock = SyftBoxURL.from_path(
-                mock_file_path, self.syftbox_client.workspace
-            )
+            # Calculate mock dataset size
+            try:
+                mock_file_path = next(dataset.mock_path.iterdir(), None)
+                dataset.mock_size = (
+                    mock_file_path.stat().st_size if mock_file_path else 0
+                )
+            except (StopIteration, OSError, FileNotFoundError):
+                dataset.mock_size = 0
 
             dataset.readme = None
-            dataset.private_size = (
-                private_file_path.stat().st_size if private_file_path else "1 B"
-            )
-            dataset.mock_size = (
-                mock_file_path.stat().st_size if mock_file_path else "1 B"
-            )
             dataset.source = find_source(dataset.uid)
 
         return ListDatasetsResponse(datasets=datasets)
@@ -186,7 +187,16 @@ class DatasetService:
                 )
 
             dataset = DatasetModel.model_validate(dataset)
-            private_file_path = next(dataset.private_path.iterdir(), None)
+
+            # Get first file from private dataset directory with error handling
+            try:
+                private_file_path = next(dataset.private_path.iterdir(), None)
+            except (OSError, FileNotFoundError) as e:
+                logger.error(f"Error accessing private dataset directory: {e}")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Private dataset directory not accessible for '{dataset_uuid}'",
+                )
 
             if not private_file_path or not private_file_path.exists():
                 raise HTTPException(
