@@ -149,6 +149,19 @@ class DatasetService:
 
         except HTTPException:
             raise
+        except PermissionError as e:
+            logger.error(f"Permission denied creating dataset: {e}")
+            logger.error(
+                "This usually indicates .syftbox directory is not writable. "
+                "Check Docker volume permissions if running in container."
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Permission denied writing to .syftbox directory: {str(e)}. "
+                    "If running in Docker, check volume mount permissions."
+                ),
+            )
         except Exception as e:
             logger.error(f"Error creating dataset: {e}")
             raise HTTPException(status_code=500, detail=str(e))

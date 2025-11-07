@@ -145,7 +145,7 @@ docker build \
 | `APP_USER` | `syftboxuser` | Container user (non-root) |
 | `APP_UID` | `1000` | Container user ID |
 
-**Note:** syft-rds is installed from PyPI via `pyproject.toml` (currently `syft-rds==0.4.2`). To use a different version, update `pyproject.toml` before building.
+**Note:** syft-rds is installed from PyPI via `pyproject.toml` (currently `syft-rds==0.5.0`). To use a different version, update `pyproject.toml` before building.
 
 ---
 
@@ -430,17 +430,75 @@ docker exec rds-dashboard env | grep SYFTBOX_SERVER
 
 ### Permission Denied Errors
 
-**Symptom:** Permission errors in logs
+**Symptom:** Permission errors in logs, especially when uploading datasets
 
-**Cause:** File ownership issues
+**Cause:** File ownership mismatch between host-mounted directories and container user (UID 1000)
 
-**Solution:**
+**Common scenarios:**
+1. Uploading datasets fails with "Permission denied writing to .syftbox directory"
+2. Container starts but datasets can't be created
+3. Logs show: `PermissionError: [Errno 13] Permission denied: '.../.syftbox/private_datasets/...'`
+
+**Solution (choose one):**
+
+**Option 1: Use named volumes (RECOMMENDED for production)**
 ```bash
-# Check file ownership
-docker exec rds-dashboard ls -la /home/syftboxuser/.syftbox
+# Let Docker manage directory ownership automatically
+docker run -d \
+  -v syftbox-data:/home/syftboxuser/SyftBox \
+  -v syftbox-config:/home/syftboxuser/.syftbox \
+  ...
+```
+✅ Pros: Docker handles permissions automatically, no manual intervention
+⚠️ Cons: Data stored in Docker-managed volumes (not directly accessible on host)
 
+**Option 2: Fix host directory ownership (for bind mounts)**
+```bash
+# Change ownership to match container UID (1000)
+sudo chown -R 1000:1000 ~/.syftbox
+sudo chown -R 1000:1000 ~/SyftBox
+
+# Then run with bind mount
+docker run -d \
+  -v ~/SyftBox:/home/syftboxuser/SyftBox \
+  -v ~/.syftbox:/home/syftboxuser/.syftbox \
+  ...
+```
+✅ Pros: Can access files directly on host
+⚠️ Cons: Requires sudo, changes host file ownership
+
+**Option 3: Build with matching UID (advanced)**
+```bash
+# Build container with your host user ID
+docker build \
+  -f docker/Dockerfile.rds-dashboard-do \
+  --build-arg APP_UID=$(id -u) \
+  -t rds-dashboard:custom \
+  .
+
+# Run with your UID
+docker run -d -v ~/.syftbox:/home/syftboxuser/.syftbox ...
+```
+✅ Pros: Container user matches your host user
+⚠️ Cons: Non-standard setup, image not portable across users
+
+**Verify the fix:**
+```bash
+# 1. Check container user ID
+docker exec rds-dashboard id
+# Should show: uid=1000(syftboxuser) gid=1000(syftboxuser)
+
+# 2. Check directory ownership
+docker exec rds-dashboard ls -la /home/syftboxuser/.syftbox
 # Should be owned by syftboxuser:syftboxuser
-# If not, recreate container (volumes might have wrong permissions)
+
+# 3. Test write access
+docker exec rds-dashboard touch /home/syftboxuser/.syftbox/test_write
+# Should succeed without error
+
+# 4. Check private_datasets directory exists and is writable
+docker exec rds-dashboard ls -la /home/syftboxuser/.syftbox/private_datasets
+# Should exist and be owned by syftboxuser
 ```
 
 ### Health Check Failing

@@ -27,10 +27,27 @@ export API_PORT="${API_PORT:-8000}"
 export HOME="${HOME}"
 export APP_USER="$(whoami)"
 
-# Create logs directory for supervisord (must exist before supervisord starts)
+# Create required directories (must exist before supervisord starts)
 # Use $HOME to support any APP_USER setting (not hardcoded to syftboxuser)
 SYFTBOX_CONFIG_DIR="${HOME}/.syftbox"
 mkdir -p "${SYFTBOX_CONFIG_DIR}/logs"
+mkdir -p "${SYFTBOX_CONFIG_DIR}/private_datasets"
+
+# Verify .syftbox directory is writable
+if [ ! -w "${SYFTBOX_CONFIG_DIR}" ]; then
+    echo "❌ ERROR: ${SYFTBOX_CONFIG_DIR} is not writable by user $(whoami)" >&2
+    echo "Directory permissions:" >&2
+    ls -la "${SYFTBOX_CONFIG_DIR}" >&2
+    echo "" >&2
+    echo "This usually happens when mounting host directories with incorrect ownership." >&2
+    echo "Solutions:" >&2
+    echo "  1. Use named volumes: -v syftbox-config:/home/syftboxuser/.syftbox" >&2
+    echo "  2. Fix host ownership: sudo chown -R 1000:1000 ~/.syftbox" >&2
+    echo "  3. Build with matching UID: docker build --build-arg APP_UID=\$(id -u)" >&2
+    exit 1
+fi
+
+echo "✓ SyftBox directories created and writable"
 
 # Start supervisord with the provided command or default
 if [ "$#" -eq 0 ]; then
