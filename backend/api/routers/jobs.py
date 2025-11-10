@@ -60,15 +60,128 @@ async def reject_job(
 
 
 @router.get(
-    "/open-code/{job_uid}",
-    summary="Open job code in browser",
-    description="Open the code directory for a specific job in the default file browser",
+    "/code/{job_uid}",
+    summary="Get job code",
+    description="Retrieve the code files for a specific job",
+    status_code=status.HTTP_200_OK,
 )
-async def open_job_code(
+async def get_job_code(
     job_uid: str,
     rds_client: RDSClient = Depends(get_rds_client),
 ):
-    """Open job code directory in the system file browser."""
+    """Get job code files and their contents."""
     service = JobService(rds_client)
-    await service.open_job_code(job_uid)
-    return {"message": f"Opened code directory for job {job_uid}"}
+    return await service.get_job_code(job_uid)
+
+
+@router.post(
+    "/run/{job_uid}",
+    summary="Run an approved job",
+    description="Execute an approved job on private data in the background",
+    status_code=status.HTTP_200_OK,
+)
+async def run_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Run an approved job on private data."""
+    service = JobService(rds_client)
+    await service.run(job_uid)
+    return JSONResponse(content={"message": f"Job {job_uid} started."}, status_code=200)
+
+
+@router.post(
+    "/rerun/{job_uid}",
+    summary="Rerun a finished or failed job",
+    description="Re-approve and re-execute a finished or failed job on private data in the background",
+    status_code=status.HTTP_200_OK,
+)
+async def rerun_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Rerun a finished or failed job."""
+    service = JobService(rds_client)
+    await service.rerun(job_uid)
+    return JSONResponse(
+        content={"message": f"Job {job_uid} restarted."}, status_code=200
+    )
+
+
+@router.delete(
+    "/{job_uid}",
+    summary="Delete a job",
+    description="Delete a job by its UID",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Delete a job."""
+    service = JobService(rds_client)
+    await service.delete(job_uid)
+    return JSONResponse(content={"message": f"Job {job_uid} deleted."}, status_code=200)
+
+
+@router.get(
+    "/logs/{job_uid}",
+    summary="Get job logs",
+    description="Retrieve stdout and stderr logs for a specific job",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job_logs(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get stdout and stderr logs for a job."""
+    service = JobService(rds_client)
+    return await service.get_logs(job_uid)
+
+
+@router.get(
+    "/output/{job_uid}",
+    summary="Get job output files",
+    description="Retrieve all output files and their contents for a specific job",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job_output(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get job output files and their contents."""
+    service = JobService(rds_client)
+    return await service.get_output_files(job_uid)
+
+
+@router.get(
+    "/{job_uid}",
+    summary="Get job details",
+    description="Get detailed metadata for a specific job by its UID",
+    status_code=status.HTTP_200_OK,
+)
+async def get_job(
+    job_uid: str,
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Get detailed job metadata."""
+    service = JobService(rds_client)
+    return await service.get_job(job_uid)
+
+
+@router.delete(
+    "",
+    summary="Delete all jobs",
+    description="Delete all jobs from the system",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_all_jobs(
+    rds_client: RDSClient = Depends(get_rds_client),
+):
+    """Delete all jobs."""
+    service = JobService(rds_client)
+    deleted_count = await service.delete_all()
+    return JSONResponse(
+        content={"message": f"Deleted {deleted_count} job(s).", "count": deleted_count},
+        status_code=200,
+    )

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./config"
+import type { AccountInfo } from "./types"
 
 export interface Job {
   uid: string
@@ -7,7 +8,7 @@ export interface Job {
   description: string
   requestedTime: Date
   requesterEmail: string
-  status: "pending" | "approved" | "denied"
+  status: "pending" | "approved" | "rejected" | "running" | "finished" | "failed"
 }
 
 interface JobResponse {
@@ -25,6 +26,7 @@ interface JobResponse {
     | "pending_code_review"
     | "job_run_failed"
     | "job_run_finished"
+    | "job_in_progress"
     | "approved"
     | "shared"
     | "rejected"
@@ -37,11 +39,12 @@ interface JobResponse {
 
 const jobStatusMap = {
   pending_code_review: "pending",
-  job_run_failed: "pending",
-  job_run_finished: "approved",
+  job_in_progress: "running",
+  job_run_failed: "failed",
+  job_run_finished: "finished",
   approved: "approved",
-  shared: "approved",
-  rejected: "denied",
+  shared: "finished",
+  rejected: "rejected",
 } as const
 
 interface JobListResponse {
@@ -133,5 +136,17 @@ export const apiService = {
     }
 
     return response
+  },
+
+  async getAccountInfo(): Promise<AccountInfo> {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/account`)
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || "Failed to fetch account information")
+    }
+
+    const data: AccountInfo = await response.json()
+    return data
   },
 }

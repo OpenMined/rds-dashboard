@@ -42,3 +42,9 @@ export interface Dataset {
   activityData: number[]
   source: undefined | ShopifySource
 }
+
+export interface AccountInfo {
+  email: string
+  is_admin: boolean
+  host_datasite_url: string
+}

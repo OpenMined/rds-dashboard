@@ -1,21 +1,24 @@
 # backend/api/services/dataset_service.py
 from pathlib import Path
 import tempfile
-from typing import Iterator, Literal, Optional
-import webbrowser
+from typing_extensions import Iterator, Literal, Optional, List
 
 from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 import requests
-from syft_core.url import SyftBoxURL
 from syft_rds.models import DatasetUpdate
-from syft_rds.client.exceptions import DatasetNotFoundError
 from syft_rds import RDSClient
 
 from ...models import ListDatasetsResponse, Dataset as DatasetModel
 from ...sources import find_source
 from ...utils import get_auto_approve_list
+
+
+# Security and resource limits
+MAX_PREVIEW_SIZE = 1024 * 1024  # 1MB per file
+MAX_TOTAL_SIZE = 50 * 1024 * 1024  # 50MB total
+MAX_FILE_COUNT = 1000  # Maximum number of files
 
 
 class DatasetService:
@@ -27,30 +30,32 @@ class DatasetService:
 
     async def list_datasets(self) -> ListDatasetsResponse:
         """List all datasets with proper formatting."""
-        datasets = [
+        datasets: List[DatasetModel] = [
             DatasetModel.model_validate(dataset)
             for dataset in self.rds_client.dataset.get_all()
         ]
 
-        # Process datasets to fix temporary issues with RDS
+        # Process datasets to add additional metadata
         for dataset in datasets:
-            private_file_path = next(dataset.private_path.iterdir(), None)
-            dataset.private = SyftBoxURL.from_path(
-                private_file_path, self.syftbox_client.workspace
-            )
+            # Calculate private dataset size
+            try:
+                private_file_path = next(dataset.private_path.iterdir(), None)
+                dataset.private_size = (
+                    private_file_path.stat().st_size if private_file_path else 0
+                )
+            except (StopIteration, OSError, FileNotFoundError):
+                dataset.private_size = 0
 
-            mock_file_path = next(dataset.mock_path.iterdir(), None)
-            dataset.mock = SyftBoxURL.from_path(
-                mock_file_path, self.syftbox_client.workspace
-            )
+            # Calculate mock dataset size
+            try:
+                mock_file_path = next(dataset.mock_path.iterdir(), None)
+                dataset.mock_size = (
+                    mock_file_path.stat().st_size if mock_file_path else 0
+                )
+            except (StopIteration, OSError, FileNotFoundError):
+                dataset.mock_size = 0
 
             dataset.readme = None
-            dataset.private_size = (
-                private_file_path.stat().st_size if private_file_path else "1 B"
-            )
-            dataset.mock_size = (
-                mock_file_path.stat().st_size if mock_file_path else "1 B"
-            )
             dataset.source = find_source(dataset.uid)
 
         return ListDatasetsResponse(datasets=datasets)
@@ -144,6 +149,19 @@ class DatasetService:
 
         except HTTPException:
             raise
+        except PermissionError as e:
+            logger.error(f"Permission denied creating dataset: {e}")
+            logger.error(
+                "This usually indicates .syftbox directory is not writable. "
+                "Check Docker volume permissions if running in container."
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    f"Permission denied writing to .syftbox directory: {str(e)}. "
+                    "If running in Docker, check volume mount permissions."
+                ),
+            )
         except Exception as e:
             logger.error(f"Error creating dataset: {e}")
             raise HTTPException(status_code=500, detail=str(e))
@@ -182,7 +200,16 @@ class DatasetService:
                 )
 
             dataset = DatasetModel.model_validate(dataset)
-            private_file_path = next(dataset.private_path.iterdir(), None)
+
+            # Get first file from private dataset directory with error handling
+            try:
+                private_file_path = next(dataset.private_path.iterdir(), None)
+            except (OSError, FileNotFoundError) as e:
+                logger.error(f"Error accessing private dataset directory: {e}")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Private dataset directory not accessible for '{dataset_uuid}'",
+                )
 
             if not private_file_path or not private_file_path.exists():
                 raise HTTPException(
@@ -227,15 +254,133 @@ class DatasetService:
                 detail=f"Failed to download mock dataset from GitHub: {e}",
             )
 
-    async def open_local_directory(
-        self, dataset_uid: str, which: Literal["private", "mock"] = "private"
-    ):
-        dataset = self.rds_client.dataset.get(uid=dataset_uid)
-        if not dataset:
-            raise DatasetNotFoundError(f"Dataset with uid {dataset_uid} does not exist")
+    def _format_file_size(self, size_bytes: int) -> str:
+        """Format file size with appropriate units consistently."""
+        MB = 1024 * 1024
+        KB = 1024
 
-        path = dataset.private_path
-        if which == "mock":
-            path = dataset.mock_path
+        if size_bytes >= MB:
+            return f"{size_bytes / MB:.2f} MB"
+        elif size_bytes >= KB:
+            return f"{size_bytes / KB:.2f} KB"
+        return f"{size_bytes} B"
 
-        webbrowser.open(f"file://{path}")
+    async def get_dataset_files(
+        self, dataset_uid: str, dataset_type: Literal["private", "mock"] = "private"
+    ) -> dict[str, dict[str, str]]:
+        """Get the dataset files and their contents (for previewable files)."""
+        try:
+            dataset = self.rds_client.dataset.get(uid=dataset_uid)
+            if not dataset:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Dataset with UID '{dataset_uid}' not found",
+                )
+
+            data_path = (
+                dataset.private_path if dataset_type == "private" else dataset.mock_path
+            )
+            files = {}
+
+            if not data_path.exists():
+                logger.warning(f"Dataset directory does not exist: {data_path}")
+                return {
+                    "data_dir": str(data_path),
+                    "files": {},
+                    "dataset_type": dataset_type,
+                }
+
+            # Resolve paths for security validation
+            data_path_resolved = data_path.resolve()
+
+            # File extensions that can be previewed as text
+            previewable_extensions = {
+                ".txt",
+                ".csv",
+                ".json",
+                ".md",
+                ".py",
+                ".yml",
+                ".yaml",
+                ".xml",
+                ".log",
+                ".tsv",
+            }
+
+            total_size = 0
+            file_count = 0
+
+            # Read all files (directories will be automatically created by frontend tree builder)
+            for file_path in data_path.rglob("*"):
+                # Skip directories - frontend will build tree from file paths
+                if file_path.is_dir():
+                    continue
+
+                # Security: Validate file is within dataset directory (prevent path traversal)
+                try:
+                    file_path.resolve().relative_to(data_path_resolved)
+                except ValueError:
+                    logger.warning(f"Path traversal attempt detected: {file_path}")
+                    continue
+
+                # Check file count limit
+                file_count += 1
+                if file_count > MAX_FILE_COUNT:
+                    logger.warning(
+                        f"File count limit ({MAX_FILE_COUNT}) exceeded for dataset {dataset_uid}"
+                    )
+                    files["_limit_exceeded"] = (
+                        f"[Dataset contains too many files. Only first {MAX_FILE_COUNT} files shown]"
+                    )
+                    break
+
+                relative_path = file_path.relative_to(data_path)
+                file_size = file_path.stat().st_size
+
+                # Handle files
+                # Check if file is previewable
+                if file_path.suffix.lower() in previewable_extensions:
+                    # Check file size
+                    if file_size > MAX_PREVIEW_SIZE:
+                        files[str(relative_path)] = (
+                            f"[File too large to preview: {self._format_file_size(file_size)}]"
+                        )
+                        continue
+
+                    # Check total size limit
+                    if total_size + file_size > MAX_TOTAL_SIZE:
+                        files[str(relative_path)] = (
+                            "[Total preview size limit exceeded]"
+                        )
+                        continue
+
+                    try:
+                        # Try to read as text with explicit UTF-8 encoding
+                        content = file_path.read_text(
+                            encoding="utf-8", errors="replace"
+                        )
+                        files[str(relative_path)] = content
+                        total_size += file_size
+                    except UnicodeDecodeError:
+                        files[str(relative_path)] = "[Unable to decode file as UTF-8]"
+                        logger.debug(f"Unicode decode error for {file_path}")
+                    except Exception as e:
+                        # If reading fails, show error
+                        files[str(relative_path)] = f"[Error reading file: {str(e)}]"
+                        logger.debug(f"Error reading {file_path}: {e}")
+                else:
+                    # For non-previewable files, show metadata
+                    files[str(relative_path)] = (
+                        f"[Binary file: {self._format_file_size(file_size)}]"
+                    )
+
+            return {
+                "data_dir": str(data_path),
+                "files": files,
+                "dataset_type": dataset_type,
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting dataset files: {e}")
+            raise HTTPException(status_code=500, detail=str(e))

@@ -29,7 +29,7 @@
 
 The app will be available at:
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:8001
+- Backend API: http://localhost:8000
 
 Both frontend and backend have hot-reload enabled during development.
 
@@ -40,14 +40,14 @@ To run multiple dashboards simultaneously (e.g., for testing with different Syft
 ```bash
 # Terminal 1 - Instance 1
 just dev "/path/to/client1.config.json"
-# → Backend: :8001, Frontend: :3000
+# → Frontend: :3000, Backend: :8000
 
 # Terminal 2 - Instance 2
 just dev "/path/to/client2.config.json"
-# → Backend: :8002, Frontend: :3001 (auto-incremented)
+# → Frontend: :3001, Backend: :8001 (auto-incremented)
 ```
 
-Each instance automatically gets its own ports. The frontend determines the backend port at runtime using the formula: `backend_port = 8001 + (frontend_port - 3000)`.
+Each instance automatically gets its own ports. The backend port is always calculated as: `backend_port = frontend_port + 5000`. The frontend auto-detects the correct API URL based on the `DEBUG` environment variable (same as the backend).
 
 **Debug**: Check API configuration in browser console:
 ```javascript
@@ -58,3 +58,26 @@ window.apiConfig.reset() // Reset if needed
 ## Build
 
 Run `just prod` to export the frontend into a static build and start the FastAPI backend server.
+
+## Note: Frontend Build Output (`frontend/out/`)
+
+**⚠️ The `frontend/out/` directory is intentionally committed to git.**
+
+This is required for SyftBox app installation:
+
+1. **When users install via**: `syftbox app install https://github.com/OpenMined/rds-dashboard`
+   - SyftBox clones this repository
+   - Executes `run.sh` which only sets up Python environment (no frontend build step)
+   - FastAPI serves pre-built static files from `frontend/out/`
+   - [SyftUI](https://github.com/OpenMined/SyftUI) embeds the app (dashboard) in an iframe
+
+2. **Deployment models**:
+   - **SyftBox Install**: Requires pre-built `frontend/out/` in git ✅
+   - **Docker**: Builds frontend during image creation (doesn't need committed build, but harmless)
+
+**Before committing frontend changes**, always rebuild:
+```bash
+bun run --cwd frontend build
+```
+
+This ensures users installing via SyftBox get the latest frontend.

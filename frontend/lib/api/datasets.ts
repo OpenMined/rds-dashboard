@@ -114,7 +114,9 @@ export const datasetsApi = {
       {},
     )
   },
-  openLocalDirectory: (uid: string) => {
-    return apiClient.get(`/api/v1/datasets/open-local-directory/${uid}`)
+  getDatasetFiles: (uid: string, dataset_type: "private" | "mock" = "private") => {
+    return apiClient.get<{ data_dir: string; files: Record<string, string>; dataset_type: string }>(
+      `/api/v1/datasets/files/${uid}?dataset_type=${dataset_type}`,
+    )
   },
 }

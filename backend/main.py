@@ -55,13 +55,21 @@ app = FastAPI(
     },
 )
 
-# CORS configuration - allow all origins in debug mode for flexibility
-# In production, this should be restricted to specific domains
+# CORS configuration
+# In dev mode: frontend is on API_PORT - 5000
+# In production: frontend is served on same port as API
+API_PORT = int(os.environ.get("API_PORT") or "8000")
+
 if get_settings().debug:
-    logger.debug("Debug mode is ON: Allowing all CORS origins")
-    allow_origins = ["*"]  # Allow all origins in development
+    # Dev mode: calculate frontend port from backend port
+    FRONTEND_PORT = API_PORT - 5000
+    logger.debug(f"Debug mode: Allowing CORS from frontend on port {FRONTEND_PORT}")
+    allow_origins = [
+        f"http://localhost:{FRONTEND_PORT}",
+        f"http://127.0.0.1:{FRONTEND_PORT}",
+    ]
 else:
-    API_PORT = os.environ.get("API_PORT") or "8000"
+    # Production: frontend served on same port as API
     allow_origins = [f"http://localhost:{API_PORT}", f"http://127.0.0.1:{API_PORT}"]
 
 app.add_middleware(

@@ -25,7 +25,7 @@ export default function RootLayout({
       <body className={cn(inter.className, "bg-background min-h-screen")}>
         <ApiConfigInit />
         <Providers>
-          {/* <Header /> */}
+          <Header />
           <div className="container mx-auto px-4 py-8">
             <Navigation />
           </div>

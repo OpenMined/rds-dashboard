@@ -25,7 +25,8 @@ def create_rds_client() -> RDSClient:
     )
 
     rds_client = init_session(
-        host=syftbox_client.email, syftbox_client=syftbox_client, start_rds_server=True
+        host=syftbox_client.email,
+        email=syftbox_client.email,
     )
     logger.debug(
         f"Initialized RDS client for {syftbox_client.email}. Is admin: {rds_client.is_admin}"
