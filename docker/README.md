@@ -61,6 +61,10 @@ cat ~/.syftbox/config.json | jq -r '.refresh_token'
 
 ### Run Container
 
+**Option 1: Fresh SyftBox Setup (Recommended for new users)**
+
+Container will generate new crypto keys and configuration:
+
 ```bash
 docker run -d \
   --name rds-dashboard \
@@ -72,6 +76,48 @@ docker run -d \
 # Access dashboard
 open http://localhost:8000
 ```
+
+**Option 2: Use Existing SyftBox Identity (Recommended for existing users)**
+
+If you already have SyftBox installed locally, use the helper script to mount your crypto keys and data while keeping your host config intact:
+
+```bash
+# Simple one-command approach
+./scripts/run-with-host-syftbox.sh
+
+# Or with environment variables
+SYFTBOX_EMAIL=your@email.com \
+SYFTBOX_REFRESH_TOKEN=<your_token> \
+./scripts/run-with-host-syftbox.sh
+```
+
+The helper script automatically:
+- ✅ Mounts all `~/.syftbox` items except `config.json` (keys, apps, datasets, logs)
+- ✅ Mounts `~/SyftBox` data directory
+- ✅ Uses your existing crypto identity
+- ✅ Generates container-specific config (doesn't modify host config)
+- ✅ Allows host and container SyftBox to run simultaneously
+
+**Option 3: Manual Mount (Advanced)**
+
+For full control, manually specify mounts:
+
+```bash
+docker run -d \
+  --name rds-dashboard \
+  -v ~/.syftbox/private_key:/home/syftboxuser/.syftbox/private_key:ro \
+  -v ~/.syftbox/public_key.pem:/home/syftboxuser/.syftbox/public_key.pem:ro \
+  -v ~/.syftbox/apps:/home/syftboxuser/.syftbox/apps \
+  -v ~/.syftbox/logs:/home/syftboxuser/.syftbox/logs \
+  -v ~/.syftbox/private_datasets:/home/syftboxuser/.syftbox/private_datasets \
+  -v ~/SyftBox:/home/syftboxuser/SyftBox \
+  -e SYFTBOX_EMAIL=your@email.com \
+  -e SYFTBOX_REFRESH_TOKEN=<your_token_here> \
+  -p 8000:8000 \
+  openmined/rds-dashboard:latest
+```
+
+**Note:** Do NOT mount `~/.syftbox/config.json` directly - it contains host-specific paths that won't work in the container.
 
 ---
 
