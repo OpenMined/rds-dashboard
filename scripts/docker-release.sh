@@ -81,8 +81,28 @@ fi
 
 echo ""
 
-# Step 2: Build for local testing (single arch)
-echo -e "${GREEN}[2/8] Building single-arch image for local testing...${NC}"
+# Step 2: Clean up old test images and containers (optional)
+echo -e "${GREEN}[2/8] Cleanup${NC}"
+if docker images | grep -q "${DOCKER_IMAGE}.*test"; then
+    echo "Found existing test image"
+    read -p "Remove old test image and containers? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Remove test containers
+        docker ps -a --filter "ancestor=${DOCKER_IMAGE}:test" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+        # Remove test image
+        docker rmi ${DOCKER_IMAGE}:test 2>/dev/null || true
+        echo "✓ Cleanup complete"
+    else
+        echo "Skipping cleanup"
+    fi
+else
+    echo "No existing test image found, skipping cleanup"
+fi
+echo ""
+
+# Step 3: Build for local testing (single arch)
+echo -e "${GREEN}[3/8] Building single-arch image for local testing...${NC}"
 docker buildx build \
   --platform linux/amd64 \
   --file ${DOCKERFILE} \
@@ -93,14 +113,20 @@ docker buildx build \
 echo -e "${GREEN}✓ Test image built: ${DOCKER_IMAGE}:test${NC}"
 echo ""
 
-# Step 3: Prompt for local testing
-echo -e "${GREEN}[3/8] Local testing${NC}"
+# Step 4: Prompt for local testing
+echo -e "${GREEN}[4/8] Local testing${NC}"
 echo -e "${YELLOW}Before pushing to Docker Hub, please test the image locally:${NC}"
 echo ""
-echo "Option A: Test with existing SyftBox (recommended):"
-echo "  DOCKER_IMAGE=${DOCKER_IMAGE}:test ./scripts/run-with-host-syftbox.sh"
+echo "Option A: Test with existing SyftBox identity:"
+echo "  docker run --rm -it \\"
+echo "    -v ~/.syftbox:/home/syftboxuser/.syftbox \\"
+echo "    -v ~/SyftBox:/home/syftboxuser/SyftBox \\"
+echo "    -e SYFTBOX_EMAIL=your@email.com \\"
+echo "    -e SYFTBOX_REFRESH_TOKEN=your_token \\"
+echo "    -p 8000:8000 \\"
+echo "    ${DOCKER_IMAGE}:test"
 echo ""
-echo "Option B: Test with fresh setup (no existing SyftBox):"
+echo "Option B: Test with fresh setup:"
 echo "  docker run --rm -it \\"
 echo "    -e SYFTBOX_EMAIL=your@email.com \\"
 echo "    -e SYFTBOX_REFRESH_TOKEN=your_token \\"
@@ -119,8 +145,8 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
-# Step 4: Show build plan
-echo -e "${GREEN}[4/8] Build and Push Plan${NC}"
+# Step 5: Show build plan
+echo -e "${GREEN}[5/8] Build and Push Plan${NC}"
 echo "This will:"
 echo "  1. Build multi-arch images (amd64 + arm64)"
 echo "  2. Push to Docker Hub with tags:"
@@ -137,8 +163,8 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
-# Step 5: Build multi-arch and push
-echo -e "${GREEN}[5/8] Building and pushing multi-arch images...${NC}"
+# Step 6: Build multi-arch and push
+echo -e "${GREEN}[6/8] Building and pushing multi-arch images...${NC}"
 docker buildx build \
   --platform ${PLATFORMS} \
   --file ${DOCKERFILE} \
@@ -152,8 +178,8 @@ docker buildx build \
 echo -e "${GREEN}✓ Images pushed to Docker Hub${NC}"
 echo ""
 
-# Step 6: Verify images on Docker Hub
-echo -e "${GREEN}[6/8] Verifying images on Docker Hub...${NC}"
+# Step 7: Verify images on Docker Hub
+echo -e "${GREEN}[7/8] Verifying images on Docker Hub...${NC}"
 echo "Waiting 5 seconds for Docker Hub to process..."
 sleep 5
 
@@ -166,15 +192,15 @@ for tag in ${VERSION_FULL} ${VERSION_MINOR} ${VERSION_MAJOR} latest; do
 done
 echo ""
 
-# Step 7: Test pulling from Docker Hub
-echo -e "${GREEN}[7/8] Testing pull from Docker Hub...${NC}"
+# Step 8: Test pulling from Docker Hub
+echo -e "${GREEN}[8/8] Testing pull from Docker Hub...${NC}"
 echo "Pulling latest tag..."
 docker pull ${DOCKER_IMAGE}:latest --quiet
 echo -e "${GREEN}✓ Successfully pulled from Docker Hub${NC}"
 echo ""
 
-# Step 8: Summary and next steps
-echo -e "${GREEN}[8/8] Release Complete!${NC}"
+# Step 9: Summary and next steps
+echo -e "${GREEN}Release Complete!${NC}"
 echo ""
 echo -e "${GREEN}✓ Images published:${NC}"
 echo "  - ${DOCKER_IMAGE}:${VERSION_FULL}"
