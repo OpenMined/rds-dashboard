@@ -49,11 +49,39 @@ echo "$SYFTBOX_SERVER" | grep -qE '^https?://' || \
         "Expected a JWT token (typically 100+ characters)"
 
 # Check if config already exists
-if [ -f "$CONFIG_FILE" ] && [ "${FORCE_OVERWRITE:-false}" != "true" ]; then
-    echo "⚠️  Config file already exists at $CONFIG_FILE"
-    echo "Skipping config generation (set FORCE_OVERWRITE=true to override)"
-    echo "=== Setup Complete (using existing config) ==="
-    exit 0
+if [ -f "$CONFIG_FILE" ]; then
+    # Read existing data_dir from config
+    EXISTING_DATA_DIR=$(jq -r '.data_dir' "$CONFIG_FILE" 2>/dev/null || echo "")
+
+    # Check if data_dir points to a different path than container expects
+    if [ -n "$EXISTING_DATA_DIR" ] && [ "$EXISTING_DATA_DIR" != "$SYFTBOX_DATA_DIR" ]; then
+        echo "⚠️  Config file exists with different data_dir path"
+        echo "  Current: $EXISTING_DATA_DIR"
+        echo "  Expected: $SYFTBOX_DATA_DIR"
+        echo ""
+        echo "Updating data_dir to container path..."
+
+        # Update only the data_dir field, preserve everything else
+        jq --arg datadir "$SYFTBOX_DATA_DIR" '.data_dir = $datadir' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"
+
+        if [ $? -eq 0 ]; then
+            mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            chmod 600 "$CONFIG_FILE"
+            echo "✓ Config updated: data_dir = $SYFTBOX_DATA_DIR"
+            echo "Note: This modifies the mounted config file"
+        else
+            rm -f "${CONFIG_FILE}.tmp"
+            error_exit "Failed to update config.json"
+        fi
+
+        echo "=== Setup Complete (config path corrected) ==="
+        exit 0
+    elif [ "${FORCE_OVERWRITE:-false}" != "true" ]; then
+        echo "⚠️  Config file already exists at $CONFIG_FILE"
+        echo "Skipping config generation (set FORCE_OVERWRITE=true to override)"
+        echo "=== Setup Complete (using existing config) ==="
+        exit 0
+    fi
 fi
 
 echo "Generating SyftBox config.json..."

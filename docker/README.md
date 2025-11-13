@@ -51,6 +51,9 @@ In production mode:
 
 - Docker 20.10+ (with BuildKit support)
 - `SYFTBOX_EMAIL` and `SYFTBOX_REFRESH_TOKEN` from your SyftBox account
+  - Download `syftbox` from https://www.syftbox.net/ (or just simply run `curl -fsSL https://syftbox.net/install.sh | sh` for macOS and Linux)
+  - After installation, please don't run the client when asked, but exit and do `syftbox login`, provide your email and then the OTP sent to your email for verification
+
 
 ### Get Your Refresh Token
 
@@ -61,9 +64,14 @@ cat ~/.syftbox/config.json | jq -r '.refresh_token'
 
 ### Run Container
 
+**Recommended: With Config Persistence**
+
+This approach works for both new and existing users:
+
 ```bash
 docker run -d \
   --name rds-dashboard \
+  -v ~/.syftbox:/home/syftboxuser/.syftbox \
   -e SYFTBOX_EMAIL=your@email.com \
   -e SYFTBOX_REFRESH_TOKEN=<your_token_here> \
   -p 8000:8000 \
@@ -72,6 +80,34 @@ docker run -d \
 # Access dashboard
 open http://localhost:8000
 ```
+
+**Benefits:**
+- ✅ **Fresh users**: Config and crypto keys persist across container restarts
+- ✅ **Existing users**: Reuses your existing crypto identity (same keys)
+- ✅ Simple one-command setup
+
+**Optional: Also mount data directory**
+
+Add `-v ~/SyftBox:/home/syftboxuser/SyftBox` to persist synced datasets and apps across container restarts:
+
+```bash
+docker run -d \
+  --name rds-dashboard \
+  -v ~/.syftbox:/home/syftboxuser/.syftbox \
+  -v ~/SyftBox:/home/syftboxuser/SyftBox \
+  -e SYFTBOX_EMAIL=your@email.com \
+  -e SYFTBOX_REFRESH_TOKEN=<your_token_here> \
+  -p 8000:8000 \
+  openmined/rds-dashboard:latest
+```
+
+> **⚠️ Important for existing users:** If you mount an existing `~/.syftbox/config.json`, the container will automatically update the `data_dir` field to point to the container path (`/home/syftboxuser/SyftBox`). All other config fields (email, tokens, keys references) remain unchanged.
+
+**Trade-offs when mounting existing config:**
+- ⚠️ Modifies `data_dir` in your host's `config.json`
+- ⚠️ Cannot run host SyftBox client simultaneously (config points to container path)
+
+**To revert:** Stop the container and manually edit `~/.syftbox/config.json` to restore the original `data_dir` path (e.g., `/Users/yourusername/SyftBox`).
 
 ---
 
@@ -558,204 +594,6 @@ Check health status:
 docker ps  # Shows health status in STATUS column
 docker inspect rds-dashboard | jq '.[0].State.Health'
 ```
-<!--
----
-
-## Docker Compose
-
-Example `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  rds-dashboard:
-    image: rds-dashboard:latest
-    container_name: rds-dashboard
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - SYFTBOX_EMAIL=${SYFTBOX_EMAIL}
-      - SYFTBOX_REFRESH_TOKEN=${SYFTBOX_REFRESH_TOKEN}
-      - SYFTBOX_SERVER=https://syftbox.net
-      - DEBUG=false
-    volumes:
-      - syftbox-data:/home/syftboxuser/SyftBox
-      - syftbox-config:/home/syftboxuser/.syftbox
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-volumes:
-  syftbox-data:
-  syftbox-config:
-```
-
-Usage:
-```bash
-# Create .env file with credentials
-echo "SYFTBOX_EMAIL=your@email.com" > .env
-echo "SYFTBOX_REFRESH_TOKEN=your_token" >> .env
-
-# Start
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
----
-
-## Kubernetes Deployment
-
-Example Kubernetes manifests:
-
-### ConfigMap (for non-sensitive config)
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: rds-dashboard-config
-data:
-  SYFTBOX_SERVER: "https://syftbox.net"
-  DEBUG: "false"
-```
-
-### Secret (for credentials)
-
-```bash
-# Create secret from literals
-kubectl create secret generic rds-dashboard-secret \
-  --from-literal=SYFTBOX_EMAIL='your@email.com' \
-  --from-literal=SYFTBOX_REFRESH_TOKEN='your_token'
-```
-
-### Deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: rds-dashboard
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: rds-dashboard
-  template:
-    metadata:
-      labels:
-        app: rds-dashboard
-    spec:
-      containers:
-      - name: rds-dashboard
-        image: rds-dashboard:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: SYFTBOX_EMAIL
-          valueFrom:
-            secretKeyRef:
-              name: rds-dashboard-secret
-              key: SYFTBOX_EMAIL
-        - name: SYFTBOX_REFRESH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: rds-dashboard-secret
-              key: SYFTBOX_REFRESH_TOKEN
-        envFrom:
-        - configMapRef:
-            name: rds-dashboard-config
-        volumeMounts:
-        - name: syftbox-data
-          mountPath: /home/syftboxuser/SyftBox
-        - name: syftbox-config
-          mountPath: /home/syftboxuser/.syftbox
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 8000
-          initialDelaySeconds: 40
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
-            cpu: "2000m"
-      volumes:
-      - name: syftbox-data
-        persistentVolumeClaim:
-          claimName: syftbox-data-pvc
-      - name: syftbox-config
-        persistentVolumeClaim:
-          claimName: syftbox-config-pvc
-```
-
-### Service
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: rds-dashboard
-spec:
-  selector:
-    app: rds-dashboard
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8000
-  type: LoadBalancer
-```
-
----
-
-## Security Considerations
-
-### Non-Root User
-
-The container runs as `syftboxuser` (UID 1000), not root. This is a security best practice.
-
-### Sensitive Data
-
-- **Refresh token** is stored in `/home/syftboxuser/.syftbox/config.json` with `600` permissions (readable only by owner)
-- **Environment variables** are visible in container inspect - use secrets management in production
-- **Volumes** should have proper backup and encryption in production
-
-### Network Security
-
-In production:
-- Use HTTPS reverse proxy (nginx, traefik)
-- Enable authentication/authorization
-- Restrict network access with firewalls
-- Consider using private Docker registries
-
----
-
-## Performance Tips
-
-1. **Use volumes for data** - Much faster than bind mounts
-2. **Allocate sufficient memory** - Recommend 2GB for production
-3. **Multi-stage build** - Already optimized (image ~500-600MB vs ~1.5GB)
-4. **Health checks** - Already configured for orchestrators
-
---- -->
 
 ## Development vs Production
 
