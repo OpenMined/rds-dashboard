@@ -45,6 +45,30 @@ In production mode:
 
 ---
 
+## What's New in v0.1.1
+
+### Improved Config Management
+
+**Problem Fixed:** In v0.1.0, mounting `~/.syftbox` modified your host's `config.json`, which could break your local SyftBox client.
+
+**Solution (v0.1.1):** The container now uses a **temporary rename strategy**:
+- ✅ Your `config.json` is renamed to `config.json.host_original` (preserved safely)
+- ✅ Container creates its own `config.json` with container-specific paths
+- ✅ Your crypto keys are shared (same identity)
+- ✅ Shared directories (`logs/`, `rds/`, `private_datasets/`) work seamlessly
+
+**User Impact:**
+- **Minimal:** Most users run containers continuously and never need manual intervention
+- **If needed:** Simply `mv ~/.syftbox/config.json.host_original ~/.syftbox/config.json` to restore
+
+**Why this approach?**
+- Simple one-line `docker run` command (no complex mount patterns)
+- Reliable across all platforms (macOS, Linux, Windows with WSL)
+- Preserves crypto identity (no key regeneration)
+- Shared directories work without symlink complications
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -84,7 +108,20 @@ open http://localhost:8000
 **Benefits:**
 - ✅ **Fresh users**: Config and crypto keys persist across container restarts
 - ✅ **Existing users**: Reuses your existing crypto identity (same keys)
+- ✅ **Shared directories**: `logs/`, `rds/`, `private_datasets/` accessible from both host and container
 - ✅ Simple one-command setup
+
+> **📌 Config Management (v0.1.1+):** When you mount `~/.syftbox`, the container temporarily renames your `config.json` to `config.json.host_original` and creates its own config with container-specific paths. Your crypto keys are preserved and shared with the container.
+
+**To restore your host config (if needed):**
+
+If you want to run SyftBox locally on your host machine after stopping the container:
+```bash
+# After stopping the container
+mv ~/.syftbox/config.json.host_original ~/.syftbox/config.json
+```
+
+This is only necessary if you plan to use your local SyftBox client between container runs. Most users keep the container running continuously and don't need this step.
 
 **Optional: Also mount data directory**
 
@@ -100,14 +137,6 @@ docker run -d \
   -p 8000:8000 \
   openmined/rds-dashboard:latest
 ```
-
-> **⚠️ Important for existing users:** If you mount an existing `~/.syftbox/config.json`, the container will automatically update the `data_dir` field to point to the container path (`/home/syftboxuser/SyftBox`). All other config fields (email, tokens, keys references) remain unchanged.
-
-**Trade-offs when mounting existing config:**
-- ⚠️ Modifies `data_dir` in your host's `config.json`
-- ⚠️ Cannot run host SyftBox client simultaneously (config points to container path)
-
-**To revert:** Stop the container and manually edit `~/.syftbox/config.json` to restore the original `data_dir` path (e.g., `/Users/yourusername/SyftBox`).
 
 ---
 
