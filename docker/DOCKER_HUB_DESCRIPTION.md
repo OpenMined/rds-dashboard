@@ -4,6 +4,11 @@ Containerized dashboard for managing remote data science (RDS) workflows with in
 
 ## Quick Start
 
+**Pull the image:**
+```bash
+docker pull openmined/rds-dashboard:latest
+```
+
 **1. Install SyftBox and get your credentials**
 
 ```bash
